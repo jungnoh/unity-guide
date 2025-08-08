@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Input and Player Control - Unity Game Development Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">Chapter 5</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html">📚 Introduction</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html">Ch 3: GameObjects & Components</a></li>
+            <li><a href="chapter04.html">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html" class="active">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html">Ch 6: Physics & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+            <h1>Chapter 5: Input and Player Control</h1>
+            
+            <div class="learning-objectives">
+                <h3>Learning Objectives</h3>
+                <ul>
+                    <li>Master Unity's <a href="https://docs.unity3d.com/Packages/com.unity.inputsystem@1.4/manual/index.html" target="_blank">Input System</a> architecture and understand its advantages over the legacy <a href="https://docs.unity3d.com/Manual/class-InputManager.html" target="_blank">Input Manager</a></li>
+                    <li>Implement robust player movement systems for both 2D and 3D games</li>
+                    <li>Design input handling that works seamlessly across multiple platforms and input devices</li>
+                    <li>Create responsive character controllers with proper <a href="https://docs.unity3d.com/Manual/PhysicsSection.html" target="_blank">physics</a> integration</li>
+                    <li>Implement advanced input features like input buffering, combo detection, and customizable controls</li>
+                    <li>Apply event-driven architecture patterns to decouple input handling from game logic</li>
+                </ul>
+            </div>
+
+            <h2>5.1 Understanding Input in Interactive Applications</h2>
+            
+            <p>Input handling in game development differs fundamentally from input handling in traditional applications. While web applications typically respond to discrete events—form submissions, button clicks, dropdown selections—games must process continuous streams of input data and translate them into immediate, responsive character actions. This creates unique challenges around timing, buffering, and maintaining consistent responsiveness across different hardware configurations.</p>
+
+            <p>In server applications, you're accustomed to handling HTTP requests that arrive with all necessary data already parsed and validated. Game input, by contrast, consists of analog values that change continuously (like joystick positions), binary states that can change multiple times per frame (like rapid button presses), and complex input sequences that must be detected across multiple frames (like fighting game combos).</p>
+
+            <p>Unity provides two distinct input systems: the legacy <a href="https://docs.unity3d.com/Manual/class-InputManager.html" target="_blank">Input Manager</a> and the newer <a href="https://docs.unity3d.com/Packages/com.unity.inputsystem@1.4/manual/index.html" target="_blank">Input System</a> package. The legacy system works similarly to basic event handling in other frameworks, while the new Input System follows modern architectural patterns with better separation of concerns, improved testability, and enhanced support for multiple input devices. Understanding both systems is important, as you'll encounter both in existing projects and documentation.</p>
+
+            <div class="alert alert-info">
+                <h4>Input System Architecture Comparison</h4>
+                <p>Understanding the architectural differences between Unity's input systems helps inform which to choose:</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1rem 0;">
+                    <div>
+                        <h5 style="color: var(--warning-color);">Legacy Input Manager</h5>
+                        <ul>
+                            <li><strong>Architecture:</strong> Polling-based, direct API calls</li>
+                            <li><strong>Configuration:</strong> Unity Editor settings panel</li>
+                            <li><strong>Multi-device:</strong> Manual device switching logic</li>
+                            <li><strong>Events:</strong> No built-in event system</li>
+                            <li><strong>Testing:</strong> Difficult to mock and test</li>
+                            <li><strong>Performance:</strong> Good for simple games</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h5 style="color: var(--accent-color);">New Input System</h5>
+                        <ul>
+                            <li><strong>Architecture:</strong> Event-driven, action-based</li>
+                            <li><strong>Configuration:</strong> Input Action Assets (scriptable)</li>
+                            <li><strong>Multi-device:</strong> Automatic device management</li>
+                            <li><strong>Events:</strong> Built-in event system with callbacks</li>
+                            <li><strong>Testing:</strong> Full mocking and simulation support</li>
+                            <li><strong>Performance:</strong> Optimized for complex input scenarios</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3>The Philosophy of Responsive Controls</h3>
+
+            <p>Responsive controls are the foundation of good gameplay. In web development, users might tolerate a 200-300ms delay when submitting forms or loading pages. In games, even 50ms of input delay can make controls feel sluggish and unresponsive. This requires carefully architecting your input handling to minimize the time between user action and visual feedback.</p>
+
+            <p>The key principles of responsive game controls mirror many concepts from real-time system design: predictable latency, consistent frame timing, and graceful degradation under load. You'll need to consider input polling frequency, buffering strategies, and the relationship between input handling and your game's frame rate.</p>
+
+            <h2>5.2 Unity's New Input System Deep Dive</h2>
+
+            <p>Unity's new Input System represents a significant architectural improvement over the legacy Input Manager. It follows modern software design principles with clear separation between input detection, processing, and response. The system is built around the concept of Input Actions—abstract representations of player intentions like "Jump," "Move," or "Fire"—that can be bound to various physical inputs across different devices.</p>
+
+            <p>This abstraction layer works similarly to dependency injection in server applications. Instead of your game logic directly querying specific hardware (like checking if the spacebar is pressed), it depends on abstract actions that can be fulfilled by any appropriate input device. This makes your code more testable, more flexible, and easier to support across multiple platforms.</p>
+
+            <h3>Setting Up the Input System</h3>
+
+            <p>Before diving into code examples, you need to install and configure the <a href="https://docs.unity3d.com/Packages/com.unity.inputsystem@1.4/manual/index.html" target="_blank">Input System</a> package. This process involves package installation, project settings configuration, and creating your first <a href="https://docs.unity3d.com/Packages/com.unity.inputsystem@1.4/api/UnityEngine.InputSystem.InputActionAsset.html" target="_blank">Input Action Asset</a>—a <a href="https://docs.unity3d.com/Manual/class-ScriptableObject.html" target="_blank">scriptable object</a> that defines all the inputs your game can respond to.</p>
+
+            <div class="exercise">
+                <h3>Installing and Configuring the Input System</h3>
+                <ol>
+                    <li><strong>Install the Package:</strong>
+                        <ul>
+                            <li>Open Window → Package Manager</li>
+                            <li>Switch to "Unity Registry"</li>
+                            <li>Search for "Input System"</li>
+                            <li>Click Install</li>
+                        </ul>
+                    </li>
+                    <li><strong>Configure Project Settings:</strong>
+                        <ul>
+                            <li>Go to Edit → Project Settings → XR Plug-in Management → Input</li>
+                            <li>Set "Active Input Handling" to "Input System Package (New)"</li>
+                            <li>Unity will prompt to restart—click "Yes"</li>
+                        </ul>
+                    </li>
+                    <li><strong>Create Input Actions Asset:</strong>
+                        <ul>
+                            <li>Right-click in Project window</li>
+                            <li>Create → Input Actions</li>
+                            <li>Name it "PlayerControls"</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+
+            <h3>Understanding Input Actions and Action Maps</h3>
+
+            <p>Input Actions are organized into Action Maps, which are logical groupings of related actions. Think of Action Maps like modules in a microservices architecture—each one handles a specific domain of functionality. You might have separate Action Maps for "Player Movement," "UI Navigation," and "Debug Controls," allowing you to enable or disable entire sets of controls based on the current game state.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Complete Input System implementation example
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class PlayerInputHandler : MonoBehaviour
+{
+    [Header("Input Configuration")]
+    [SerializeField] private PlayerInput playerInput;
+    
+    [Header("Movement Settings")]
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float jumpForce = 12f;
+    
+    [Header("Components")]
+    [SerializeField] private Rigidbody2D rb;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private LayerMask groundLayerMask;
+    
+    // Input values
+    private Vector2 moveInput;
+    private bool jumpInput;
+    private bool isGrounded;
+    
+    // Input Actions (automatically generated from Input Actions Asset)
+    private PlayerControls controls;
+    
+    void Awake()
+    {
+        // Initialize the input actions
+        controls = new PlayerControls();
+        
+        // Get components
+        if (rb == null) rb = GetComponent&lt;Rigidbody2D&gt;();
+        if (playerInput == null) playerInput = GetComponent&lt;PlayerInput&gt;();
+    }
+    
+    void OnEnable()
+    {
+        // Enable the input actions
+        controls.Enable();
+        
+        // Subscribe to input events
+        controls.Player.Move.performed += OnMovePerformed;
+        controls.Player.Move.canceled += OnMoveCanceled;
+        controls.Player.Jump.performed += OnJumpPerformed;
+        controls.Player.Jump.canceled += OnJumpCanceled;
+        
+        // Advanced input events
+        controls.Player.Fire.started += OnFireStarted;
+        controls.Player.Fire.performed += OnFirePerformed;
+        controls.Player.Fire.canceled += OnFireCanceled;
+    }
+    
+    void OnDisable()
+    {
+        // Unsubscribe from events to prevent memory leaks
+        controls.Player.Move.performed -= OnMovePerformed;
+        controls.Player.Move.canceled -= OnMoveCanceled;
+        controls.Player.Jump.performed -= OnJumpPerformed;
+        controls.Player.Jump.canceled -= OnJumpCanceled;
+        controls.Player.Fire.started -= OnFireStarted;
+        controls.Player.Fire.performed -= OnFirePerformed;
+        controls.Player.Fire.canceled -= OnFireCanceled;
+        
+        // Disable the input actions
+        controls.Disable();
+    }
+    
+    void FixedUpdate()
+    {
+        // Handle movement in FixedUpdate for consistent physics
+        HandleMovement();
+        HandleJump();
+        CheckGrounded();
+    }
+    
+    #region Input Event Handlers
+    
+    private void OnMovePerformed(InputAction.CallbackContext context)
+    {
+        // Get movement input as Vector2
+        moveInput = context.ReadValue&lt;Vector2&gt;();
+        Debug.Log($"Move input: {moveInput}");
+    }
+    
+    private void OnMoveCanceled(InputAction.CallbackContext context)
+    {
+        moveInput = Vector2.zero;
+    }
+    
+    private void OnJumpPerformed(InputAction.CallbackContext context)
+    {
+        jumpInput = true;
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>("Jump input detected");
+    }
+    
+    private void OnJumpCanceled(InputAction.CallbackContext context)
+    {
+        jumpInput = false;
+    }
+    
+    private void OnFireStarted(InputAction.CallbackContext context)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>("Fire button pressed (started)");
+        // Handle fire button press start (e.g., charge shot)
+    }
+    
+    private void OnFirePerformed(InputAction.CallbackContext context)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>("Fire button held (performed)");
+        // Handle continuous firing or charged shot
+    }
+    
+    private void OnFireCanceled(InputAction.CallbackContext context)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>("Fire button released (canceled)");
+        // Handle fire button release (e.g., release charged shot)
+    }
+    
+    #endregion
+    
+    #region Movement Implementation
+    
+    private void HandleMovement()
+    {
+        // Apply horizontal movement
+        Vector2 velocity = rb.velocity;
+        velocity.x = moveInput.x * moveSpeed;
+        rb.velocity = velocity;
+        
+        // Handle sprite flipping
+        if (moveInput.x &gt; 0)
+            transform.localScale = new Vector3(1, 1, 1);
+        else if (moveInput.x &lt; 0)
+            transform.localScale = new Vector3(-1, 1, 1);
+    }
+    
+    private void HandleJump()
+    {
+        if (jumpInput && isGrounded)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            jumpInput = false; // Consume the jump input
+        }
+    }
+    
+    private void CheckGrounded()
+    {
+        // Simple ground check using overlap circle
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayerMask);
+    }
+    
+    #endregion
+    
+    #region Input Queries (Alternative to Events)
+    
+    void Update()
+    {
+        // You can also query input directly (useful for continuous checks)
+        if (controls.Player.Interact.WasPressedThisFrame())
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>("Interact pressed this frame");
+            // Handle interaction
+        }
+        
+        // Check if button is currently held
+        if (controls.Player.Fire.IsPressed())
+        {
+            // Handle continuous firing
+        }
+        
+        // Get current input value
+        Vector2 currentMoveInput = controls.Player.Move.ReadValue&lt;Vector2&gt;();
+    }
+    
+    #endregion
+    
+    #region Device Management
+    
+    public void OnDeviceChange(PlayerInput input)
+    {
+        // Called automatically when input device changes
+        string deviceName = input.currentControlScheme;
+        Debug.Log($"Input device changed to: {deviceName}");
+        
+        // Update UI prompts based on current device
+        UpdateInputPrompts(deviceName);
+    }
+    
+    private void UpdateInputPrompts(string controlScheme)
+    {
+        // Update UI to show appropriate button prompts
+        switch (controlScheme.ToLower())
+        {
+            case "keyboard":
+                // Show keyboard prompts (WASD, Space, etc.)
+                break;
+            case "gamepad":
+                // Show gamepad prompts (Xbox/PlayStation buttons)
+                break;
+            case "touch":
+                // Show touch controls
+                break;
+        }
+    }
+    
+    #endregion
+}</code></pre>
+            </div>
+
+            <h3>Input Action Types and Behaviors</h3>
+
+            <p>The Input System provides different action types that determine how input is processed and when events are fired. Understanding these types is crucial for creating responsive controls that behave correctly across different input devices and interaction patterns.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                <div class="alert alert-info">
+                    <h4>🎮 Button Actions</h4>
+                    <p>For discrete input like jump, fire, or interact buttons:</p>
+                    <ul>
+                        <li><strong>Started:</strong> Fired when button is first pressed</li>
+                        <li><strong>Performed:</strong> Fired when press threshold is met</li>
+                        <li><strong>Canceled:</strong> Fired when button is released</li>
+                        <li><strong>Use Cases:</strong> Jump, shoot, interact, menu confirm</li>
+                    </ul>
+                </div>
+                <div class="alert alert-success">
+                    <h4>📊 Value Actions</h4>
+                    <p>For continuous input like movement sticks or mouse position:</p>
+                    <ul>
+                        <li><strong>Performed:</strong> Fired continuously while value changes</li>
+                        <li><strong>Canceled:</strong> Fired when input returns to default state</li>
+                        <li><strong>Value Types:</strong> float, <a href="https://docs.unity3d.com/ScriptReference/Vector2.html" target="_blank">Vector2</a>, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a></li>
+                        <li><strong>Use Cases:</strong> Movement, camera control, analog triggers</li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <h4>⚡ Pass Through Actions</h4>
+                    <p>For input that needs immediate response without processing:</p>
+                    <ul>
+                        <li><strong>Performed:</strong> Fired every frame while active</li>
+                        <li><strong>No buffering:</strong> Immediate response</li>
+                        <li><strong>High frequency:</strong> Can fire multiple times per frame</li>
+                        <li><strong>Use Cases:</strong> Mouse look, precise aiming, real-time input</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>5.3 Advanced Input Techniques</h2>
+
+            <p>Professional games require sophisticated input handling beyond basic button presses and movement. This includes input buffering for responsive controls, combo detection for complex interactions, input remapping for accessibility, and proper handling of edge cases like device disconnection or input conflicts.</p>
+
+            <h3>Input Buffering and Timing</h3>
+
+            <p>Input buffering is crucial for creating controls that feel responsive and forgiving. Without buffering, players must time their inputs with frame-perfect precision, which feels frustrating and unresponsive. A good input buffer allows players to press buttons slightly before they become effective, making the game feel more responsive and intuitive.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Advanced input buffering system
+using System.Collections.Generic;
+using UnityEngine;
+
+public class InputBuffer : MonoBehaviour
+{
+    [Header("Buffer Settings")]
+    [SerializeField] private float bufferTime = 0.2f; // Buffer inputs for 200ms
+    [SerializeField] private int maxBufferSize = 10;
+    
+    // Buffered input data structure
+    [System.Serializable]
+    public class BufferedInput
+    {
+        public string actionName;
+        public float timestamp;
+        public bool consumed;
+        
+        public BufferedInput(string action, float time)
+        {
+            actionName = action;
+            timestamp = time;
+            consumed = false;
+        }
+        
+        public bool IsExpired(float currentTime, float bufferTime)
+        {
+            return currentTime - timestamp > bufferTime;
+        }
+    }
+    
+    private List&lt;BufferedInput&gt; inputBuffer = new List&lt;BufferedInput&gt;();
+    private PlayerControls controls;
+    
+    void Awake()
+    {
+        controls = new PlayerControls();
+    }
+    
+    void OnEnable()
+    {
+        controls.Enable();
+        
+        // Buffer all input actions
+        controls.Player.Jump.performed += ctx => BufferInput("Jump");
+        controls.Player.Fire.performed += ctx => BufferInput("Fire");
+        controls.Player.Interact.performed += ctx => BufferInput("Interact");
+        controls.Player.Dash.performed += ctx => BufferInput("Dash");
+    }
+    
+    void OnDisable()
+    {
+        controls.Disable();
+    }
+    
+    void Update()
+    {
+        // Clean up expired inputs
+        CleanExpiredInputs();
+        
+        // Example: Check for jump input when landing
+        if (IsGrounded() && HasBufferedInput("Jump"))
+        {
+            ConsumeBufferedInput("Jump");
+            ExecuteJump();
+        }
+        
+        // Example: Check for dash input with specific timing
+        if (CanDash() && HasBufferedInput("Dash"))
+        {
+            ConsumeBufferedInput("Dash");
+            ExecuteDash();
+        }
+    }
+    
+    private void BufferInput(string actionName)
+    {
+        // Add new input to buffer
+        var bufferedInput = new BufferedInput(actionName, <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>);
+        inputBuffer.Add(bufferedInput);
+        
+        Debug.Log($"Buffered input: {actionName} at {<a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>:F3}");
+        
+        // Limit buffer size
+        if (inputBuffer.Count > maxBufferSize)
+        {
+            inputBuffer.RemoveAt(0);
+        }
+    }
+    
+    public bool HasBufferedInput(string actionName, bool consumeOnCheck = false)
+    {
+        for (int i = inputBuffer.Count - 1; i >= 0; i--)
+        {
+            var input = inputBuffer[i];
+            if (input.actionName == actionName && !input.consumed)
+            {
+                if (consumeOnCheck)
+                {
+                    input.consumed = true;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public bool ConsumeBufferedInput(string actionName)
+    {
+        for (int i = inputBuffer.Count - 1; i >= 0; i--)
+        {
+            var input = inputBuffer[i];
+            if (input.actionName == actionName && !input.consumed)
+            {
+                input.consumed = true;
+                Debug.Log($"Consumed buffered input: {actionName}");
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private void CleanExpiredInputs()
+    {
+        float currentTime = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+        inputBuffer.RemoveAll(input => 
+            input.IsExpired(currentTime, bufferTime) || input.consumed);
+    }
+    
+    // Example usage methods
+    private bool IsGrounded()
+    {
+        // Your ground checking logic here
+        return Physics2D.OverlapCircle(transform.position, 0.1f, <a href="https://docs.unity3d.com/ScriptReference/LayerMask.GetMask.html" target="_blank">LayerMask.GetMask</a>("Ground"));
+    }
+    
+    private bool CanDash()
+    {
+        // Your dash availability logic here
+        return true;
+    }
+    
+    private void ExecuteJump()
+    {
+        Debug.Log("Executing buffered jump!");
+        GetComponent&lt;Rigidbody2D&gt;().velocity = new Vector2(GetComponent&lt;Rigidbody2D&gt;().velocity.x, 12f);
+    }
+    
+    private void ExecuteDash()
+    {
+        Debug.Log("Executing buffered dash!");
+        // Your dash logic here
+    }
+    
+    // Debug information
+    void OnGUI()
+    {
+        if (<a href="https://docs.unity3d.com/ScriptReference/Application-isEditor.html" target="_blank">Application.isEditor</a>)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.BeginArea.html" target="_blank">GUILayout.BeginArea</a>(new Rect(10, 100, 300, 200));
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Input Buffer ({inputBuffer.Count}/{maxBufferSize}):");
+            
+            foreach (var input in inputBuffer)
+            {
+                float age = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - input.timestamp;
+                string status = input.consumed ? "[CONSUMED]" : "[ACTIVE]";
+                <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"{input.actionName}: {age:F2}s {status}");
+            }
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.EndArea.html" target="_blank">GUILayout.EndArea</a>();
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3>Combo Detection System</h3>
+
+            <p>Combo detection is essential for fighting games, action games, and any title that uses complex input sequences. A robust combo system must handle timing windows, input variations, and partial matches while remaining performant enough to run every frame.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Comprehensive combo detection system
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ComboSystem : MonoBehaviour
+{
+    [Header("Combo Configuration")]
+    [SerializeField] private float comboWindow = 0.5f; // Time window for combo inputs
+    [SerializeField] private float comboResetTime = 1.0f; // Time before combo resets
+    
+    [System.Serializable]
+    public class ComboDefinition
+    {
+        public string name;
+        public string[] inputSequence;
+        public float maxTimeBetweenInputs = 0.5f;
+        public UnityEngine.Events.UnityEvent onComboExecuted;
+    }
+    
+    [SerializeField] private ComboDefinition[] combos;
+    
+    private List&lt;string&gt; currentInputSequence = new List&lt;string&gt;();
+    private List&lt;float&gt; inputTimestamps = new List&lt;float&gt;();
+    private PlayerControls controls;
+    
+    void Awake()
+    {
+        controls = new PlayerControls();
+    }
+    
+    void OnEnable()
+    {
+        controls.Enable();
+        
+        // Register input events for combo detection
+        controls.Player.AttackLight.performed += ctx => RegisterComboInput("Light");
+        controls.Player.AttackHeavy.performed += ctx => RegisterComboInput("Heavy");
+        controls.Player.Block.performed += ctx => RegisterComboInput("Block");
+        controls.Player.Move.performed += ctx => RegisterDirectionalInput(ctx.ReadValue&lt;Vector2&gt;());
+    }
+    
+    void OnDisable()
+    {
+        controls.Disable();
+    }
+    
+    void Update()
+    {
+        // Clean up old inputs
+        CleanupOldInputs();
+        
+        // Check for combo matches
+        CheckForCombos();
+    }
+    
+    private void RegisterComboInput(string inputName)
+    {
+        currentInputSequence.Add(inputName);
+        inputTimestamps.Add(<a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>);
+        
+        Debug.Log($"Combo input registered: {inputName}");
+        Debug.Log($"Current sequence: {string.Join(" → ", currentInputSequence)}");
+    }
+    
+    private void RegisterDirectionalInput(Vector2 direction)
+    {
+        // Convert directional input to string representation
+        string directionString = GetDirectionString(direction);
+        if (!string.IsNullOrEmpty(directionString))
+        {
+            RegisterComboInput(directionString);
+        }
+    }
+    
+    private string GetDirectionString(Vector2 direction)
+    {
+        // Convert analog input to 8-directional strings
+        const float threshold = 0.7f;
+        
+        if (direction.magnitude < threshold) return "";
+        
+        float angle = <a href="https://docs.unity3d.com/ScriptReference/Mathf.Atan2.html" target="_blank">Mathf.Atan2</a>(direction.y, direction.x) * <a href="https://docs.unity3d.com/ScriptReference/Mathf.Rad2Deg.html" target="_blank">Mathf.Rad2Deg</a>;
+        if (angle < 0) angle += 360;
+        
+        // 8-directional input detection
+        if (angle >= 337.5f || angle < 22.5f) return "Right";
+        if (angle >= 22.5f && angle < 67.5f) return "UpRight";
+        if (angle >= 67.5f && angle < 112.5f) return "Up";
+        if (angle >= 112.5f && angle < 157.5f) return "UpLeft";
+        if (angle >= 157.5f && angle < 202.5f) return "Left";
+        if (angle >= 202.5f && angle < 247.5f) return "DownLeft";
+        if (angle >= 247.5f && angle < 292.5f) return "Down";
+        if (angle >= 292.5f && angle < 337.5f) return "DownRight";
+        
+        return "";
+    }
+    
+    private void CleanupOldInputs()
+    {
+        float currentTime = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+        
+        // Remove inputs older than combo window
+        for (int i = currentInputSequence.Count - 1; i >= 0; i--)
+        {
+            if (currentTime - inputTimestamps[i] > comboResetTime)
+            {
+                currentInputSequence.RemoveAt(i);
+                inputTimestamps.RemoveAt(i);
+            }
+        }
+    }
+    
+    private void CheckForCombos()
+    {
+        if (currentInputSequence.Count == 0) return;
+        
+        foreach (var combo in combos)
+        {
+            if (IsComboMatch(combo))
+            {
+                ExecuteCombo(combo);
+                ClearInputSequence();
+                break; // Execute only one combo per frame
+            }
+        }
+    }
+    
+    private bool IsComboMatch(ComboDefinition combo)
+    {
+        var sequence = combo.inputSequence;
+        var currentSequence = currentInputSequence;
+        
+        // Check if we have enough inputs
+        if (currentSequence.Count < sequence.Length) return false;
+        
+        // Check if the last N inputs match the combo sequence
+        int startIndex = currentSequence.Count - sequence.Length;
+        
+        for (int i = 0; i < sequence.Length; i++)
+        {
+            if (currentSequence[startIndex + i] != sequence[i])
+            {
+                return false;
+            }
+        }
+        
+        // Check timing between inputs
+        for (int i = 1; i < sequence.Length; i++)
+        {
+            int inputIndex = startIndex + i;
+            float timeDiff = inputTimestamps[inputIndex] - inputTimestamps[inputIndex - 1];
+            
+            if (timeDiff > combo.maxTimeBetweenInputs)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    private void ExecuteCombo(ComboDefinition combo)
+    {
+        Debug.Log($"Combo executed: {combo.name}");
+        Debug.Log($"Input sequence: {string.Join(" → ", combo.inputSequence)}");
+        
+        // Trigger the combo's UnityEvent
+        combo.onComboExecuted?.Invoke();
+        
+        // Add visual feedback, effects, etc.
+        ShowComboFeedback(combo.name);
+    }
+    
+    private void ShowComboFeedback(string comboName)
+    {
+        // Visual feedback for combo execution
+        Debug.Log($"*** {comboName.ToUpper()} COMBO! ***");
+        
+        // You could add:
+        // - Screen shake
+        // - Particle effects
+        // - UI feedback
+        // - Sound effects
+        // - Slow motion effect
+    }
+    
+    private void ClearInputSequence()
+    {
+        currentInputSequence.Clear();
+        inputTimestamps.Clear();
+    }
+    
+    // Debug GUI
+    void OnGUI()
+    {
+        if (<a href="https://docs.unity3d.com/ScriptReference/Application-isEditor.html" target="_blank">Application.isEditor</a>)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.BeginArea.html" target="_blank">GUILayout.BeginArea</a>(new Rect(10, 300, 400, 300));
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>("=== COMBO SYSTEM DEBUG ===");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Current Sequence: {string.Join(" → ", currentInputSequence)}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Sequence Length: {currentInputSequence.Count}");
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Space.html" target="_blank">GUILayout.Space</a>(10);
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>("Available Combos:");
+            
+            foreach (var combo in combos)
+            {
+                string comboDisplay = string.Join(" → ", combo.inputSequence);
+                <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"• {combo.name}: {comboDisplay}");
+            }
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.EndArea.html" target="_blank">GUILayout.EndArea</a>();
+        }
+    }
+}
+
+// Example combo actions
+public class ComboActions : MonoBehaviour
+{
+    public void ExecuteFireballCombo()
+    {
+        Debug.Log("🔥 FIREBALL COMBO EXECUTED!");
+        // Add fireball logic here
+    }
+    
+    public void ExecuteUppercutCombo()
+    {
+        Debug.Log("👊 UPPERCUT COMBO EXECUTED!");
+        // Add uppercut logic here
+    }
+    
+    public void ExecuteSpecialMoveCombo()
+    {
+        Debug.Log("⭐ SPECIAL MOVE COMBO EXECUTED!");
+        // Add special move logic here
+    }
+}</code></pre>
+            </div>
+
+            <h2>5.4 Platform-Specific Input Handling</h2>
+
+            <p>Modern games must support multiple input devices and platforms, each with their own conventions and limitations. Unity's Input System provides excellent cross-platform support, but you still need to understand the nuances of different input devices and implement platform-specific features like haptic feedback, adaptive triggers, and touch controls.</p>
+
+            <h3>Multi-Device Support and Device Management</h3>
+
+            <p>Managing multiple input devices requires careful consideration of device priority, player assignment, and graceful handling of device connection and disconnection. This is particularly important for local multiplayer games or games that support both keyboard and gamepad simultaneously.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Comprehensive multi-device input management
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Users;
+
+public class MultiDeviceInputManager : MonoBehaviour
+{
+    [Header("Device Management")]
+    [SerializeField] private bool allowDeviceSwitching = true;
+    [SerializeField] private bool showDeviceDebugInfo = true;
+    
+    [System.Serializable]
+    public class DeviceSettings
+    {
+        public string deviceType;
+        public float mouseSensitivity = 1.0f;
+        public float gamepadSensitivity = 1.0f;
+        public bool hapticFeedback = true;
+        public Color deviceColor = Color.white;
+    }
+    
+    [SerializeField] private DeviceSettings[] deviceConfigurations;
+    
+    // Device tracking
+    private InputDevice currentDevice;
+    private string currentControlScheme;
+    private PlayerInput playerInput;
+    private Dictionary&lt;string, DeviceSettings&gt; deviceSettingsMap;
+    
+    // Events for device changes
+    public System.Action&lt;InputDevice, string&gt; OnDeviceChanged;
+    public System.Action&lt;InputDevice&gt; OnDeviceAdded;
+    public System.Action&lt;InputDevice&gt; OnDeviceRemoved;
+    
+    void Awake()
+    {
+        playerInput = GetComponent&lt;PlayerInput&gt;();
+        InitializeDeviceSettings();
+        SetupDeviceCallbacks();
+    }
+    
+    void OnEnable()
+    {
+        // Listen for device changes
+        InputSystem.onDeviceChange += OnInputDeviceChange;
+        InputUser.onChange += OnInputUserChange;
+    }
+    
+    void OnDisable()
+    {
+        InputSystem.onDeviceChange -= OnInputDeviceChange;
+        InputUser.onChange -= OnInputUserChange;
+    }
+    
+    private void InitializeDeviceSettings()
+    {
+        deviceSettingsMap = new Dictionary&lt;string, DeviceSettings&gt;();
+        
+        foreach (var settings in deviceConfigurations)
+        {
+            deviceSettingsMap[settings.deviceType.ToLower()] = settings;
+        }
+    }
+    
+    private void SetupDeviceCallbacks()
+    {
+        if (playerInput != null)
+        {
+            // Set up PlayerInput callbacks
+            playerInput.onControlsChanged += OnControlsChanged;
+        }
+    }
+    
+    private void OnInputDeviceChange(InputDevice device, InputDeviceChange change)
+    {
+        switch (change)
+        {
+            case InputDeviceChange.Added:
+                Debug.Log($"Device added: {device.displayName} ({device.GetType().Name})");
+                OnDeviceAdded?.Invoke(device);
+                break;
+                
+            case InputDeviceChange.Removed:
+                Debug.Log($"Device removed: {device.displayName}");
+                OnDeviceRemoved?.Invoke(device);
+                HandleDeviceDisconnection(device);
+                break;
+                
+            case InputDeviceChange.Reconnected:
+                Debug.Log($"Device reconnected: {device.displayName}");
+                break;
+                
+            case InputDeviceChange.Disconnected:
+                Debug.Log($"Device disconnected: {device.displayName}");
+                HandleDeviceDisconnection(device);
+                break;
+        }
+    }
+    
+    private void OnInputUserChange(InputUser user, InputUserChange change, InputDevice device)
+    {
+        switch (change)
+        {
+            case InputUserChange.DevicePaired:
+                Debug.Log($"Device paired to user: {device?.displayName}");
+                break;
+                
+            case InputUserChange.DeviceUnpaired:
+                Debug.Log($"Device unpaired from user: {device?.displayName}");
+                break;
+                
+            case InputUserChange.ControlSchemeChanged:
+                Debug.Log($"Control scheme changed for user");
+                break;
+        }
+    }
+    
+    private void OnControlsChanged(PlayerInput input)
+    {
+        // Called when the control scheme changes
+        var newDevice = input.GetDevice&lt;InputDevice&gt;();
+        var newControlScheme = input.currentControlScheme;
+        
+        Debug.Log($"Controls changed to: {newControlScheme} using device: {newDevice?.displayName}");
+        
+        // Update current device tracking
+        currentDevice = newDevice;
+        currentControlScheme = newControlScheme;
+        
+        // Apply device-specific settings
+        ApplyDeviceSettings(newControlScheme);
+        
+        // Notify listeners
+        OnDeviceChanged?.Invoke(newDevice, newControlScheme);
+        
+        // Update UI elements (button prompts, etc.)
+        UpdateUIForDevice(newControlScheme);
+    }
+    
+    private void ApplyDeviceSettings(string controlScheme)
+    {
+        string deviceKey = controlScheme.ToLower();
+        
+        if (deviceSettingsMap.TryGetValue(deviceKey, out DeviceSettings settings))
+        {
+            Debug.Log($"Applying settings for device: {controlScheme}");
+            
+            // Apply device-specific configurations
+            // This could include sensitivity, dead zones, vibration settings, etc.
+            
+            // Example: Apply mouse sensitivity for first-person camera
+            var cameraController = GetComponent&lt;FirstPersonCamera&gt;();
+            if (cameraController != null)
+            {
+                if (controlScheme.ToLower().Contains("mouse"))
+                {
+                    cameraController.SetSensitivity(settings.mouseSensitivity);
+                }
+                else
+                {
+                    cameraController.SetSensitivity(settings.gamepadSensitivity);
+                }
+            }
+        }
+    }
+    
+    private void UpdateUIForDevice(string controlScheme)
+    {
+        // Update UI elements to show appropriate input prompts
+        var uiManager = <a href="https://docs.unity3d.com/ScriptReference/Object.FindObjectOfType.html" target="_blank">FindObjectOfType</a>&lt;UIInputPromptManager&gt;();
+        if (uiManager != null)
+        {
+            uiManager.UpdatePromptsForDevice(controlScheme);
+        }
+        
+        Debug.Log($"Updated UI prompts for: {controlScheme}");
+    }
+    
+    private void HandleDeviceDisconnection(InputDevice device)
+    {
+        // Handle graceful device disconnection
+        if (device == currentDevice)
+        {
+            Debug.LogWarning("Current input device disconnected! Switching to fallback.");
+            
+            // Pause game or show reconnection prompt
+            ShowDeviceDisconnectedPrompt();
+            
+            // Try to switch to another available device
+            TrySwitchToAlternativeDevice();
+        }
+    }
+    
+    private void ShowDeviceDisconnectedPrompt()
+    {
+        // Show UI prompt for device reconnection
+        var uiManager = <a href="https://docs.unity3d.com/ScriptReference/Object.FindObjectOfType.html" target="_blank">FindObjectOfType</a>&lt;UIManager&gt;();
+        if (uiManager != null)
+        {
+            uiManager.ShowDeviceDisconnectedDialog(currentDevice?.displayName ?? "Unknown Device");
+        }
+    }
+    
+    private void TrySwitchToAlternativeDevice()
+    {
+        // Try to find and switch to an alternative input device
+        var availableDevices = InputSystem.devices;
+        
+        foreach (var device in availableDevices)
+        {
+            if (device.enabled && device != currentDevice)
+            {
+                Debug.Log($"Switching to alternative device: {device.displayName}");
+                // Force switch to this device if possible
+                break;
+            }
+        }
+    }
+    
+    // Haptic feedback support
+    public void TriggerHapticFeedback(float intensity = 1.0f, float duration = 0.1f)
+    {
+        if (currentDevice is Gamepad gamepad)
+        {
+            string deviceKey = currentControlScheme.ToLower();
+            
+            if (deviceSettingsMap.TryGetValue(deviceKey, out DeviceSettings settings) && 
+                settings.hapticFeedback)
+            {
+                // Trigger haptic feedback on gamepad
+                gamepad.SetMotorSpeeds(intensity, intensity);
+                
+                // Stop haptic feedback after duration
+                <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.Invoke.html" target="_blank">Invoke</a>(nameof(StopHapticFeedback), duration);
+            }
+        }
+    }
+    
+    private void StopHapticFeedback()
+    {
+        if (currentDevice is Gamepad gamepad)
+        {
+            gamepad.SetMotorSpeeds(0, 0);
+        }
+    }
+    
+    // Platform-specific features
+    public bool SupportsHapticFeedback()
+    {
+        return currentDevice is Gamepad;
+    }
+    
+    public bool SupportsAdaptiveTriggers()
+    {
+        // Check for DualSense controller (PS5)
+        return currentDevice != null && 
+               currentDevice.description.product.Contains("DualSense");
+    }
+    
+    public string GetCurrentDeviceDisplayName()
+    {
+        return currentDevice?.displayName ?? "No Device";
+    }
+    
+    public InputDevice GetCurrentDevice()
+    {
+        return currentDevice;
+    }
+    
+    // Debug information
+    void OnGUI()
+    {
+        if (showDeviceDebugInfo && <a href="https://docs.unity3d.com/ScriptReference/Application-isEditor.html" target="_blank">Application.isEditor</a>)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.BeginArea.html" target="_blank">GUILayout.BeginArea</a>(new Rect(10, 400, 400, 300));
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>("=== INPUT DEVICE DEBUG ===");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Current Device: {GetCurrentDeviceDisplayName()}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Control Scheme: {currentControlScheme}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Supports Haptics: {SupportsHapticFeedback()}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Supports Adaptive Triggers: {SupportsAdaptiveTriggers()}");
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Space.html" target="_blank">GUILayout.Space</a>(10);
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>("Available Devices:");
+            
+            foreach (var device in InputSystem.devices)
+            {
+                string status = device.enabled ? "[ENABLED]" : "[DISABLED]";
+                string current = device == currentDevice ? " ← CURRENT" : "";
+                <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"• {device.displayName} {status}{current}");
+            }
+            
+            if (<a href="https://docs.unity3d.com/ScriptReference/GUILayout.Button.html" target="_blank">GUILayout.Button</a>("Trigger Haptic Feedback"))
+            {
+                TriggerHapticFeedback(0.5f, 0.2f);
+            }
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.EndArea.html" target="_blank">GUILayout.EndArea</a>();
+        }
+    }
+}
+
+// Supporting classes for UI management
+public class UIInputPromptManager : MonoBehaviour
+{
+    public void UpdatePromptsForDevice(string controlScheme)
+    {
+        // Update all UI input prompts based on current device
+        Debug.Log($"Updating input prompts for: {controlScheme}");
+        
+        // Find all input prompt components and update them
+        var prompts = <a href="https://docs.unity3d.com/ScriptReference/Object.FindObjectsOfType.html" target="_blank">FindObjectsOfType</a>&lt;InputPromptUI&gt;();
+        foreach (var prompt in prompts)
+        {
+            prompt.UpdateForControlScheme(controlScheme);
+        }
+    }
+}
+
+public class InputPromptUI : MonoBehaviour
+{
+    public void UpdateForControlScheme(string controlScheme)
+    {
+        // Update individual prompt based on control scheme
+        // This could change button icons, text, etc.
+    }
+}</code></pre>
+            </div>
+
+            <h2>5.5 Character Movement Systems</h2>
+
+            <p>Character movement is often the most complex part of input handling because it must feel responsive while integrating seamlessly with physics systems, animation systems, and game mechanics. Different types of games require different movement approaches—a platformer needs precise, immediate response for jumping puzzles, while a simulation game might prioritize realistic acceleration and momentum.</p>
+
+            <h3>2D Character Controller Implementation</h3>
+
+            <p>A robust 2D character controller must handle variable jump heights, coyote time (allowing jumps slightly after leaving a platform), jump buffering, slope handling, and smooth movement that works consistently across different frame rates. This example implements a feature-complete 2D controller with advanced techniques used in professional games.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Professional 2D character controller with advanced features
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
+public class AdvancedCharacterController2D : MonoBehaviour
+{
+    [Header("Movement Settings")]
+    [SerializeField] private float maxSpeed = 8f;
+    [SerializeField] private float acceleration = 50f;
+    [SerializeField] private float deceleration = 50f;
+    [SerializeField] private float airAcceleration = 30f;
+    [SerializeField] private float airDeceleration = 30f;
+    
+    [Header("Jump Settings")]
+    [SerializeField] private float jumpHeight = 4f;
+    [SerializeField] private float jumpTimeToApex = 0.4f;
+    [SerializeField] private float fallMultiplier = 2.5f;
+    [SerializeField] private float lowJumpMultiplier = 2f;
+    [SerializeField] private int maxJumps = 2; // For double jump
+    
+    [Header("Advanced Jump Features")]
+    [SerializeField] private float coyoteTime = 0.1f; // Grace period after leaving ground
+    [SerializeField] private float jumpBufferTime = 0.1f; // Buffer jump input
+    [SerializeField] private float variableJumpHeight = 0.5f; // Minimum jump height ratio
+    
+    [Header("Ground Detection")]
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private Vector2 groundCheckSize = new Vector2(0.8f, 0.1f);
+    [SerializeField] private LayerMask groundLayerMask;
+    
+    [Header("Slope Handling")]
+    [SerializeField] private float maxSlopeAngle = 45f;
+    [SerializeField] private PhysicsMaterial2D noFrictionMaterial;
+    [SerializeField] private PhysicsMaterial2D frictionMaterial;
+    
+    // Components
+    private Rigidbody2D rb;
+    private Collider2D col;
+    private PlayerControls controls;
+    
+    // Movement state
+    private Vector2 input;
+    private Vector2 velocity;
+    private bool facingRight = true;
+    
+    // Ground state
+    private bool isGrounded;
+    private bool wasGrounded;
+    private float lastGroundedTime;
+    private float slopeAngle;
+    private Vector2 slopeNormal;
+    private bool isOnSlope;
+    
+    // Jump state
+    private int jumpsRemaining;
+    private float lastJumpInputTime;
+    private bool isJumping;
+    private bool isJumpCut;
+    private float jumpForce;
+    private float gravity;
+    
+    // Physics calculations
+    void Awake()
+    {
+        rb = GetComponent&lt;Rigidbody2D&gt;();
+        col = GetComponent&lt;Collider2D&gt;();
+        controls = new PlayerControls();
+        
+        // Calculate jump physics
+        gravity = -(2 * jumpHeight) / <a href="https://docs.unity3d.com/ScriptReference/Mathf.Pow.html" target="_blank">Mathf.Pow</a>(jumpTimeToApex, 2);
+        jumpForce = <a href="https://docs.unity3d.com/ScriptReference/Mathf.Abs.html" target="_blank">Mathf.Abs</a>(gravity) * jumpTimeToApex;
+        
+        Debug.Log($"Calculated gravity: {gravity}, jump force: {jumpForce}");
+    }
+    
+    void OnEnable()
+    {
+        controls.Enable();
+        controls.Player.Move.performed += OnMoveInput;
+        controls.Player.Move.canceled += OnMoveInput;
+        controls.Player.Jump.performed += OnJumpInput;
+        controls.Player.Jump.canceled += OnJumpCancelInput;
+    }
+    
+    void OnDisable()
+    {
+        controls.Player.Move.performed -= OnMoveInput;
+        controls.Player.Move.canceled -= OnMoveInput;
+        controls.Player.Jump.performed -= OnJumpInput;
+        controls.Player.Jump.canceled -= OnJumpCancelInput;
+        controls.Disable();
+    }
+    
+    void Update()
+    {
+        CheckGrounded();
+        HandleTimers();
+        HandleSpriteFlipping();
+    }
+    
+    void FixedUpdate()
+    {
+        HandleMovement();
+        HandleJumping();
+        HandleSlopePhysics();
+        ApplyMovement();
+    }
+    
+    #region Input Handlers
+    
+    private void OnMoveInput(InputAction.CallbackContext context)
+    {
+        Vector2 inputValue = context.ReadValue&lt;Vector2&gt;();
+        input = inputValue;
+    }
+    
+    private void OnJumpInput(InputAction.CallbackContext context)
+    {
+        lastJumpInputTime = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+    }
+    
+    private void OnJumpCancelInput(InputAction.CallbackContext context)
+    {
+        if (isJumping && velocity.y > 0)
+        {
+            isJumpCut = true;
+        }
+    }
+    
+    #endregion
+    
+    #region Ground Detection
+    
+    private void CheckGrounded()
+    {
+        wasGrounded = isGrounded;
+        
+        // Check if touching ground
+        Collider2D groundCollider = Physics2D.OverlapBox(
+            groundCheck.position, 
+            groundCheckSize, 
+            0f, 
+            groundLayerMask);
+        
+        isGrounded = groundCollider != null;
+        
+        if (isGrounded)
+        {
+            lastGroundedTime = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+            
+            // Reset jumps when grounded
+            if (!wasGrounded)
+            {
+                jumpsRemaining = maxJumps;
+                isJumping = false;
+                isJumpCut = false;
+            }
+            
+            // Calculate slope
+            CalculateSlope(groundCollider);
+        }
+        else
+        {
+            isOnSlope = false;
+            slopeAngle = 0f;
+        }
+    }
+    
+    private void CalculateSlope(Collider2D groundCollider)
+    {
+        // Raycast to get slope information
+        RaycastHit2D hit = Physics2D.Raycast(
+            groundCheck.position, 
+            <a href="https://docs.unity3d.com/ScriptReference/Vector2-down.html" target="_blank">Vector2.down</a>, 
+            groundCheckSize.y + 0.1f, 
+            groundLayerMask);
+        
+        if (hit.collider != null)
+        {
+            slopeNormal = hit.normal;
+            slopeAngle = <a href="https://docs.unity3d.com/ScriptReference/Vector2.Angle.html" target="_blank">Vector2.Angle</a>(hit.normal, <a href="https://docs.unity3d.com/ScriptReference/Vector2-up.html" target="_blank">Vector2.up</a>);
+            isOnSlope = slopeAngle > 0.1f && slopeAngle <= maxSlopeAngle;
+        }
+    }
+    
+    #endregion
+    
+    #region Movement
+    
+    private void HandleMovement()
+    {
+        float targetSpeed = input.x * maxSpeed;
+        float accel = isGrounded ? acceleration : airAcceleration;
+        float decel = isGrounded ? deceleration : airDeceleration;
+        
+        // Choose acceleration or deceleration
+        float accelerationRate = (<a href="https://docs.unity3d.com/ScriptReference/Mathf.Abs.html" target="_blank">Mathf.Abs</a>(targetSpeed) > 0.01f) ? accel : decel;
+        
+        // Apply acceleration
+        velocity.x = <a href="https://docs.unity3d.com/ScriptReference/Mathf.MoveTowards.html" target="_blank">Mathf.MoveTowards</a>(velocity.x, targetSpeed, accelerationRate * <a href="https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html" target="_blank">Time.fixedDeltaTime</a>);
+        
+        // Handle slope movement
+        if (isOnSlope && isGrounded && <a href="https://docs.unity3d.com/ScriptReference/Mathf.Abs.html" target="_blank">Mathf.Abs</a>(input.x) > 0.1f)
+        {
+            HandleSlopeMovement();
+        }
+    }
+    
+    private void HandleSlopeMovement()
+    {
+        // Adjust movement direction for slopes
+        Vector2 slopeDirection = <a href="https://docs.unity3d.com/ScriptReference/Vector2.Perpendicular.html" target="_blank">Vector2.Perpendicular</a>(slopeNormal).normalized;
+        
+        if (slopeDirection.x != <a href="https://docs.unity3d.com/ScriptReference/Mathf.Sign.html" target="_blank">Mathf.Sign</a>(input.x))
+        {
+            slopeDirection = -slopeDirection;
+        }
+        
+        // Apply slope movement
+        Vector2 slopeMovement = slopeDirection * <a href="https://docs.unity3d.com/ScriptReference/Mathf.Abs.html" target="_blank">Mathf.Abs</a>(velocity.x);
+        velocity.x = slopeMovement.x;
+        velocity.y = slopeMovement.y;
+    }
+    
+    #endregion
+    
+    #region Jumping
+    
+    private void HandleJumping()
+    {
+        // Check for jump input with buffering and coyote time
+        bool canJump = (jumpsRemaining > 0) && 
+                      (isGrounded || <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - lastGroundedTime <= coyoteTime) &&
+                      (<a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - lastJumpInputTime <= jumpBufferTime);
+        
+        if (canJump)
+        {
+            ExecuteJump();
+        }
+        
+        // Apply gravity and variable jump height
+        ApplyGravity();
+    }
+    
+    private void ExecuteJump()
+    {
+        // Reset vertical velocity and apply jump force
+        velocity.y = jumpForce;
+        
+        jumpsRemaining--;
+        isJumping = true;
+        isJumpCut = false;
+        
+        // Reset jump buffer
+        lastJumpInputTime = 0f;
+        
+        Debug.Log($"Jump executed! Jumps remaining: {jumpsRemaining}");
+    }
+    
+    private void ApplyGravity()
+    {
+        // Variable jump height - stronger gravity when jump button is released
+        if (isJumpCut && velocity.y > 0)
+        {
+            velocity.y += gravity * lowJumpMultiplier * <a href="https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html" target="_blank">Time.fixedDeltaTime</a>;
+        }
+        // Stronger gravity when falling
+        else if (velocity.y < 0)
+        {
+            velocity.y += gravity * fallMultiplier * <a href="https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html" target="_blank">Time.fixedDeltaTime</a>;
+        }
+        // Normal gravity
+        else
+        {
+            velocity.y += gravity * <a href="https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html" target="_blank">Time.fixedDeltaTime</a>;
+        }
+        
+        // Terminal velocity
+        velocity.y = Mathf.Max(velocity.y, gravity);
+    }
+    
+    #endregion
+    
+    #region Physics and Polish
+    
+    private void HandleSlopePhysics()
+    {
+        // Apply appropriate physics material based on slope
+        if (isOnSlope && <a href="https://docs.unity3d.com/ScriptReference/Mathf.Abs.html" target="_blank">Mathf.Abs</a>(input.x) < 0.1f)
+        {
+            // Apply friction material to prevent sliding on slopes
+            col.sharedMaterial = frictionMaterial;
+        }
+        else
+        {
+            // Use no friction material for smooth movement
+            col.sharedMaterial = noFrictionMaterial;
+        }
+    }
+    
+    private void ApplyMovement()
+    {
+        // Apply the calculated velocity to the rigidbody
+        rb.velocity = velocity;
+        
+        // Store velocity for next frame
+        velocity = rb.velocity;
+    }
+    
+    private void HandleTimers()
+    {
+        // Update various timers used for advanced features
+        // These are handled automatically through the time-based checks
+    }
+    
+    private void HandleSpriteFlipping()
+    {
+        // Flip sprite based on movement direction
+        if (input.x > 0 && !facingRight)
+        {
+            Flip();
+        }
+        else if (input.x < 0 && facingRight)
+        {
+            Flip();
+        }
+    }
+    
+    private void Flip()
+    {
+        facingRight = !facingRight;
+        transform.Rotate(0, 180, 0);
+    }
+    
+    #endregion
+    
+    #region Debug and Gizmos
+    
+    void OnDrawGizmosSelected()
+    {
+        // Draw ground check area
+        if (groundCheck != null)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/Gizmos-color.html" target="_blank">Gizmos.color</a> = isGrounded ? <a href="https://docs.unity3d.com/ScriptReference/Color-green.html" target="_blank">Color.green</a> : <a href="https://docs.unity3d.com/ScriptReference/Color-red.html" target="_blank">Color.red</a>;
+            <a href="https://docs.unity3d.com/ScriptReference/Gizmos.DrawWireCube.html" target="_blank">Gizmos.DrawWireCube</a>(groundCheck.position, groundCheckSize);
+        }
+        
+        // Draw slope normal
+        if (isOnSlope && <a href="https://docs.unity3d.com/ScriptReference/Application-isPlaying.html" target="_blank">Application.isPlaying</a>)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/Gizmos-color.html" target="_blank">Gizmos.color</a> = <a href="https://docs.unity3d.com/ScriptReference/Color-blue.html" target="_blank">Color.blue</a>;
+            <a href="https://docs.unity3d.com/ScriptReference/Gizmos.DrawRay.html" target="_blank">Gizmos.DrawRay</a>(groundCheck.position, slopeNormal * 2f);
+        }
+    }
+    
+    void OnGUI()
+    {
+        if (<a href="https://docs.unity3d.com/ScriptReference/Application-isEditor.html" target="_blank">Application.isEditor</a>)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.BeginArea.html" target="_blank">GUILayout.BeginArea</a>(new Rect(<a href="https://docs.unity3d.com/ScriptReference/Screen-width.html" target="_blank">Screen.width</a> - 300, 10, 290, 400));
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>("=== CHARACTER CONTROLLER DEBUG ===");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Grounded: {isGrounded}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Velocity: {velocity.ToString("F2")}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Input: {input.ToString("F2")}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Jumps Remaining: {jumpsRemaining}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Is Jumping: {isJumping}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Jump Cut: {isJumpCut}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"On Slope: {isOnSlope}");
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Slope Angle: {slopeAngle:F1}°");
+            
+            float coyoteTimeRemaining = coyoteTime - (<a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - lastGroundedTime);
+            if (coyoteTimeRemaining > 0)
+            {
+                <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Coyote Time: {coyoteTimeRemaining:F2}s");
+            }
+            
+            float jumpBufferRemaining = jumpBufferTime - (<a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - lastJumpInputTime);
+            if (jumpBufferRemaining > 0 && lastJumpInputTime > 0)
+            {
+                <a href="https://docs.unity3d.com/ScriptReference/GUILayout.Label.html" target="_blank">GUILayout.Label</a>($"Jump Buffer: {jumpBufferRemaining:F2}s");
+            }
+            
+            <a href="https://docs.unity3d.com/ScriptReference/GUILayout.EndArea.html" target="_blank">GUILayout.EndArea</a>();
+        }
+    }
+    
+    #endregion
+}</code></pre>
+            </div>
+
+            <h2>5.6 Exercises and Challenges</h2>
+
+            <div class="exercise">
+                <h3>Basic Input System Implementation</h3>
+                <p>Create a comprehensive input system for a 2D platformer:</p>
+                <ol>
+                    <li><strong>Set up Input Actions:</strong> Create an Input Actions asset with movement, jump, attack, and interact actions</li>
+                    <li><strong>Implement Character Controller:</strong> Build a responsive 2D character controller with proper physics integration</li>
+                    <li><strong>Add Input Buffering:</strong> Implement jump buffering and coyote time for forgiving controls</li>
+                    <li><strong>Device Support:</strong> Test your controller with keyboard, gamepad, and touch input</li>
+                </ol>
+            </div>
+
+            <div class="challenge">
+                <h3>Advanced Input Features Challenge</h3>
+                <p>Extend your input system with professional-grade features:</p>
+                <ol>
+                    <li><strong>Combo System:</strong> Implement a combo detection system that can recognize 3-4 input sequences</li>
+                    <li><strong>Input Remapping:</strong> Create a UI system that allows players to rebind controls</li>
+                    <li><strong>Accessibility Features:</strong> Add hold-to-toggle options, input sensitivity adjustment, and colorblind-friendly UI</li>
+                    <li><strong>Analytics Integration:</strong> Track input patterns and controller usage statistics</li>
+                    <li><strong>Performance Testing:</strong> Optimize your input system to handle 60+ FPS with minimal allocation</li>
+                </ol>
+            </div>
+
+            <h2>Summary</h2>
+
+            <p>In this chapter, you've mastered the essential skills for creating responsive, professional input systems:</p>
+            <ul>
+                <li>✅ Understanding the architectural differences between Unity's input systems and choosing the right approach</li>
+                <li>✅ Implementing robust character controllers with advanced features like coyote time and input buffering</li>
+                <li>✅ Creating sophisticated input detection systems including combo recognition and timing windows</li>
+                <li>✅ Managing multiple input devices and gracefully handling device changes and disconnections</li>
+                <li>✅ Building platform-specific features like haptic feedback and adaptive controls</li>
+                <li>✅ Applying event-driven architecture principles to create maintainable, testable input systems</li>
+            </ul>
+
+            <p>Mastering input handling is crucial because it directly impacts how players perceive your game's quality and responsiveness. Poor input handling can make even the best game mechanics feel frustrating, while excellent input systems can elevate simple gameplay into something that feels polished and professional. The techniques you've learned here—input buffering, combo detection, multi-device support, and proper physics integration—are used in commercial games across all genres.</p>
+
+            <div class="alert alert-success" style="margin-top: 2rem;">
+                <h3>Next Steps</h3>
+                <p>Before moving to Chapter 6:</p>
+                <ol>
+                    <li>Implement the basic input system exercise with proper input actions</li>
+                    <li>Test your character controller across different input devices</li>
+                    <li>Experiment with input buffering and coyote time values to understand their impact</li>
+                    <li>Try implementing a simple combo system for attack chains</li>
+                    <li>Practice debugging input issues using Unity's Input Debugger</li>
+                </ol>
+                <p style="margin-top: 1rem;"><strong>Remember:</strong> Great input handling is invisible to players—it just feels right!</p>
+                
+                <div class="demo-controls" style="margin-top: 1rem;">
+                    <button class="demo-button" onclick="window.location.href='chapter04.html'">
+                        ← Previous Chapter
+                    </button>
+                    <button class="demo-button" onclick="window.location.href='chapter06.html'">
+                        Continue to Chapter 6 →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

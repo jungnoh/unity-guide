@@ -110,6 +110,23 @@ Each chapter should include:
 - Include links to Unity documentation screenshots
 - Reference official Unity Learn resources
 
+### Unity Documentation Links
+- **Link major Unity concepts, classes, and systems** to their official documentation
+- Apply to **body text only** - NOT headers, table of contents, or navigation elements
+- Use HTML format: `<a href="https://docs.unity3d.com/ScriptReference/ClassName.html" target="_blank">ClassName</a>`
+- Examples: `<a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>`, `<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>`
+- Links should open in new tabs (`target="_blank"`) for better reading experience
+- **Prioritize linking:**
+  - Unity classes: MonoBehaviour, GameObject, Transform, Rigidbody, etc.
+  - Unity enums: ForceMode, KeyCode, AudioRolloffMode, etc.
+  - Unity systems: Input System, Physics, Audio, Scene Management
+  - Important methods: GetComponent, AddForce, Instantiate, Destroy
+  - Unity concepts: prefabs, coroutines, scripting lifecycle
+- **URL patterns:**
+  - ScriptReference: `https://docs.unity3d.com/ScriptReference/[ClassName].html`
+  - Manual pages: `https://docs.unity3d.com/Manual/[page-name].html`
+  - Package docs: `https://docs.unity3d.com/Packages/[package-name]/manual/[page].html`
+
 ### Terminology Mapping
 Map Unity terms to familiar concepts:
 - GameObject → Component instance (React)

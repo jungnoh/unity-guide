@@ -1,0 +1,3096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 8: Audio and Visual Effects - Unity Game Development Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">Chapter 8</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html">📚 Introduction</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html">Ch 3: GameObjects & Components</a></li>
+            <li><a href="chapter04.html">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html">Ch 6: Physics & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html" class="active">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+        <article class="chapter">
+            <header class="chapter-header">
+                <div class="chapter-number">Chapter 8</div>
+                <h1>Audio and Visual Effects</h1>
+                <p class="chapter-description">Create immersive experiences with Unity's audio system and particle effects to bring your game world to life</p>
+            </header>
+
+            <section class="learning-objectives">
+                <h2>What You'll Learn</h2>
+                <ul>
+                    <li>Unity's audio system architecture and 3D spatial audio</li>
+                    <li>Dynamic music and adaptive soundtracks</li>
+                    <li>Particle systems for visual effects and environmental atmosphere</li>
+                    <li>Visual effects graph (VFX Graph) for complex effects</li>
+                    <li>Post-processing effects for cinematic quality</li>
+                    <li>Performance optimization for effects-heavy scenes</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Unity's Audio System Architecture</h2>
+                
+                <p>Unity's audio system follows a modular architecture similar to a professional Digital Audio Workstation (DAW). Just as you might route audio through different channels and effects in a mixing board, Unity's audio pipeline consists of AudioSources (input channels), AudioMixers (mixing boards), and AudioListeners (output speakers).</p>
+
+                <p>Think of this system like a microservices architecture for sound. Each AudioSource acts as an independent service that can play audio clips, while AudioMixers serve as middleware that processes, routes, and combines audio streams. The AudioListener functions as the final consumer—like a load balancer that receives all processed audio and sends it to the player's speakers.</p>
+
+                <div class="info-box">
+                    <h4>DevOps Perspective: Audio as a Service Pipeline</h4>
+                    <p>Audio processing in Unity mirrors distributed system patterns. AudioSources publish audio events to AudioMixers, which apply transformations (like middleware applying business rules), then route the processed audio to AudioListeners. This allows for sophisticated audio management, dynamic mixing, and real-time effects processing.</p>
+                </div>
+
+                <h3>Audio Source Management and 3D Spatial Audio</h3>
+
+                <div class="code-example">
+                    <h4>Comprehensive Audio Manager</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.Audio;
+using System.Collections.Generic;
+using System.Collections;
+
+[System.Serializable]
+public class AudioClipData
+{
+    public string name;
+    public AudioClip clip;
+    public float volume = 1f;
+    public float pitch = 1f;
+    public bool loop = false;
+    public bool is3D = true;
+    public AudioMixerGroup mixerGroup;
+}
+
+[System.Serializable]
+public class SoundCategory
+{
+    public string categoryName;
+    public List&lt;AudioClipData&gt; clips = new List&lt;AudioClipData&gt;();
+    public float categoryVolume = 1f;
+    public bool allowMultiple = false;
+    public int maxConcurrentSounds = 5;
+}
+
+public class AudioManager : MonoBehaviour
+{
+    [Header("Audio Configuration")]
+    public AudioMixer mainMixer;
+    public SoundCategory[] soundCategories;
+    public int maxAudioSources = 20;
+    public float globalVolume = 1f;
+    
+    [Header("3D Audio Settings")]
+    public float dopplerLevel = 1f;
+    public float maxDistance = 50f;
+    public AnimationCurve distanceAttenuation = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+    
+    [Header("Performance Settings")]
+    public bool enableAudioCulling = true;
+    public float cullingDistance = 100f;
+    public int audioSourcePoolSize = 10;
+    
+    // Audio source pool for performance
+    private Queue&lt;AudioSource&gt; audioSourcePool = new Queue&lt;AudioSource&gt;();
+    private List&lt;AudioSource&gt; activeAudioSources = new List&lt;AudioSource&gt;();
+    
+    // Audio clip lookup dictionary
+    private Dictionary&lt;string, AudioClipData&gt; audioClipLookup = new Dictionary&lt;string, AudioClipData&gt;();
+    private Dictionary&lt;string, List&lt;AudioSource&gt; categorySources = new Dictionary&lt;string, List&lt;AudioSource&gt;&gt;();
+    
+    // Listener reference
+    private AudioListener audioListener;
+    private Transform listenerTransform;
+    
+    // Singleton pattern for global access
+    public static AudioManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            InitializeAudioSystem();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    
+    void Start()
+    {
+        SetupAudioListener();
+        BuildAudioClipLookup();
+        InitializeAudioSourcePool();
+        ConfigureGlobalAudioSettings();
+    }
+    
+    void Update()
+    {
+        if (enableAudioCulling)
+        {
+            UpdateAudioCulling();
+        }
+        
+        CleanupFinishedAudioSources();
+    }
+    
+    void InitializeAudioSystem()
+    {
+        // Initialize category tracking
+        foreach (SoundCategory category in soundCategories)
+        {
+            categorySources[category.categoryName] = new List&lt;AudioSource&gt;();
+        }
+    }
+    
+    void SetupAudioListener()
+    {
+        audioListener = FindObjectOfType&lt;AudioListener&gt;();
+        if (audioListener == null)
+        {
+            Debug.LogWarning("No AudioListener found in scene - creating one on Main Camera");
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                audioListener = mainCamera.gameObject.AddComponent&lt;AudioListener&gt;();
+            }
+        }
+        
+        if (audioListener != null)
+        {
+            listenerTransform = audioListener.transform;
+        }
+    }
+    
+    void BuildAudioClipLookup()
+    {
+        audioClipLookup.Clear();
+        
+        foreach (SoundCategory category in soundCategories)
+        {
+            foreach (AudioClipData clipData in category.clips)
+            {
+                if (clipData.clip != null)
+                {
+                    string key = $"{category.categoryName}_{clipData.name}";
+                    audioClipLookup[key] = clipData;
+                    audioClipLookup[clipData.name] = clipData; // Also allow direct name lookup
+                }
+            }
+        }
+        
+        Debug.Log($"Audio Manager: Loaded {audioClipLookup.Count} audio clips");
+    }
+    
+    void InitializeAudioSourcePool()
+    {
+        for (int i = 0; i &lt; audioSourcePoolSize; i++)
+        {
+            GameObject audioSourceObj = new GameObject($"PooledAudioSource_{i}");
+            audioSourceObj.transform.SetParent(transform);
+            
+            AudioSource audioSource = audioSourceObj.AddComponent&lt;AudioSource&gt;();
+            ConfigureAudioSource(audioSource);
+            
+            audioSourceObj.SetActive(false);
+            audioSourcePool.Enqueue(audioSource);
+        }
+    }
+    
+    void ConfigureGlobalAudioSettings()
+    {
+        // Configure global 3D audio settings
+        AudioSettings.dopplerLevel = dopplerLevel;
+        
+        // Set global volume
+        if (mainMixer != null)
+        {
+            mainMixer.SetFloat("MasterVolume", Mathf.Log10(globalVolume) * 20);
+        }
+    }
+    
+    // Public API for playing audio
+    public AudioSource PlaySound(string soundName, Vector3? position = null, Transform parent = null)
+    {
+        if (!audioClipLookup.ContainsKey(soundName))
+        {
+            Debug.LogWarning($"Audio clip '{soundName}' not found in audio library");
+            return null;
+        }
+        
+        AudioClipData clipData = audioClipLookup[soundName];
+        return PlayAudioClip(clipData, position, parent);
+    }
+    
+    public AudioSource PlaySoundFromCategory(string categoryName, int clipIndex = 0, Vector3? position = null, Transform parent = null)
+    {
+        SoundCategory category = GetSoundCategory(categoryName);
+        if (category == null || clipIndex &gt;= category.clips.Count)
+        {
+            Debug.LogWarning($"Invalid category '{categoryName}' or clip index {clipIndex}");
+            return null;
+        }
+        
+        AudioClipData clipData = category.clips[clipIndex];
+        return PlayAudioClip(clipData, position, parent);
+    }
+    
+    public AudioSource PlayRandomSoundFromCategory(string categoryName, Vector3? position = null, Transform parent = null)
+    {
+        SoundCategory category = GetSoundCategory(categoryName);
+        if (category == null || category.clips.Count == 0)
+        {
+            return null;
+        }
+        
+        int randomIndex = Random.Range(0, category.clips.Count);
+        return PlaySoundFromCategory(categoryName, randomIndex, position, parent);
+    }
+    
+    AudioSource PlayAudioClip(AudioClipData clipData, Vector3? position, Transform parent)
+    {
+        // Check category constraints
+        string categoryName = GetCategoryNameForClip(clipData);
+        if (!CanPlayInCategory(categoryName))
+        {
+            return null;
+        }
+        
+        // Get audio source from pool
+        AudioSource audioSource = GetPooledAudioSource();
+        if (audioSource == null)
+        {
+            Debug.LogWarning("No available audio sources in pool");
+            return null;
+        }
+        
+        // Configure audio source
+        SetupAudioSource(audioSource, clipData, position, parent);
+        
+        // Play the clip
+        audioSource.Play();
+        
+        // Track active sources
+        activeAudioSources.Add(audioSource);
+        if (!string.IsNullOrEmpty(categoryName))
+        {
+            categorySources[categoryName].Add(audioSource);
+        }
+        
+        // Auto-cleanup for non-looping clips
+        if (!clipData.loop)
+        {
+            StartCoroutine(ReturnToPoolAfterPlaying(audioSource, clipData.clip.length));
+        }
+        
+        return audioSource;
+    }
+    
+    void SetupAudioSource(AudioSource audioSource, AudioClipData clipData, Vector3? position, Transform parent)
+    {
+        // Basic setup
+        audioSource.clip = clipData.clip;
+        audioSource.volume = clipData.volume;
+        audioSource.pitch = clipData.pitch;
+        audioSource.loop = clipData.loop;
+        
+        // 3D/2D configuration
+        if (clipData.is3D)
+        {
+            audioSource.spatialBlend = 1f; // Full 3D
+            audioSource.rolloffMode = AudioRolloffMode.Custom;
+            audioSource.SetCustomCurve(AudioSourceCurveType.CustomRolloff, distanceAttenuation);
+            audioSource.maxDistance = maxDistance;
+            audioSource.dopplerLevel = dopplerLevel;
+        }
+        else
+        {
+            audioSource.spatialBlend = 0f; // Full 2D
+        }
+        
+        // Mixer group assignment
+        if (clipData.mixerGroup != null)
+        {
+            audioSource.outputAudioMixerGroup = clipData.mixerGroup;
+        }
+        
+        // Position and parenting
+        if (position.HasValue)
+        {
+            audioSource.transform.position = position.Value;
+        }
+        
+        if (parent != null)
+        {
+            audioSource.transform.SetParent(parent);
+            audioSource.transform.localPosition = Vector3.zero;
+        }
+        else if (position.HasValue)
+        {
+            audioSource.transform.SetParent(null);
+        }
+        
+        audioSource.gameObject.SetActive(true);
+    }
+    
+    void ConfigureAudioSource(AudioSource audioSource)
+    {
+        // Default configuration for pooled sources
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 1f; // 3D by default
+        audioSource.rolloffMode = AudioRolloffMode.Custom;
+        audioSource.maxDistance = maxDistance;
+        audioSource.dopplerLevel = dopplerLevel;
+    }
+    
+    AudioSource GetPooledAudioSource()
+    {
+        if (audioSourcePool.Count &gt; 0)
+        {
+            return audioSourcePool.Dequeue();
+        }
+        
+        // Pool is empty - create new source if under limit
+        if (activeAudioSources.Count &lt; maxAudioSources)
+        {
+            GameObject audioSourceObj = new GameObject("DynamicAudioSource");
+            audioSourceObj.transform.SetParent(transform);
+            
+            AudioSource audioSource = audioSourceObj.AddComponent&lt;AudioSource&gt;();
+            ConfigureAudioSource(audioSource);
+            
+            return audioSource;
+        }
+        
+        return null; // No available sources
+    }
+    
+    void ReturnToPool(AudioSource audioSource)
+    {
+        if (audioSource == null) return;
+        
+        // Clean up tracking
+        activeAudioSources.Remove(audioSource);
+        
+        foreach (var categoryList in categorySources.Values)
+        {
+            categoryList.Remove(audioSource);
+        }
+        
+        // Reset audio source
+        audioSource.Stop();
+        audioSource.clip = null;
+        audioSource.transform.SetParent(transform);
+        audioSource.transform.localPosition = Vector3.zero;
+        audioSource.gameObject.SetActive(false);
+        
+        // Return to pool
+        audioSourcePool.Enqueue(audioSource);
+    }
+    
+    IEnumerator ReturnToPoolAfterPlaying(AudioSource audioSource, float clipLength)
+    {
+        yield return new WaitForSeconds(clipLength + 0.1f);
+        
+        if (audioSource != null &amp;&amp; !audioSource.isPlaying)
+        {
+            ReturnToPool(audioSource);
+        }
+    }
+    
+    void CleanupFinishedAudioSources()
+    {
+        for (int i = activeAudioSources.Count - 1; i &gt;= 0; i--)
+        {
+            AudioSource source = activeAudioSources[i];
+            
+            if (source == null || (!source.isPlaying &amp;&amp; !source.loop))
+            {
+                if (source != null)
+                {
+                    ReturnToPool(source);
+                }
+                else
+                {
+                    activeAudioSources.RemoveAt(i);
+                }
+            }
+        }
+    }
+    
+    // Category management
+    SoundCategory GetSoundCategory(string categoryName)
+    {
+        foreach (SoundCategory category in soundCategories)
+        {
+            if (category.categoryName == categoryName)
+            {
+                return category;
+            }
+        }
+        return null;
+    }
+    
+    string GetCategoryNameForClip(AudioClipData clipData)
+    {
+        foreach (SoundCategory category in soundCategories)
+        {
+            if (category.clips.Contains(clipData))
+            {
+                return category.categoryName;
+            }
+        }
+        return null;
+    }
+    
+    bool CanPlayInCategory(string categoryName)
+    {
+        if (string.IsNullOrEmpty(categoryName)) return true;
+        
+        SoundCategory category = GetSoundCategory(categoryName);
+        if (category == null) return true;
+        
+        List&lt;AudioSource&gt; categoryAudioSources = categorySources[categoryName];
+        
+        // Check if multiple sounds allowed
+        if (!category.allowMultiple &amp;&amp; categoryAudioSources.Count &gt; 0)
+        {
+            return false;
+        }
+        
+        // Check concurrent sound limit
+        return categoryAudioSources.Count &lt; category.maxConcurrentSounds;
+    }
+    
+    // Audio culling for performance
+    void UpdateAudioCulling()
+    {
+        if (listenerTransform == null) return;
+        
+        Vector3 listenerPosition = listenerTransform.position;
+        
+        foreach (AudioSource source in activeAudioSources)
+        {
+            if (source == null) continue;
+            
+            float distance = Vector3.Distance(source.transform.position, listenerPosition);
+            bool shouldBeMuted = distance &gt; cullingDistance;
+            
+            source.mute = shouldBeMuted;
+        }
+    }
+    
+    // Public control methods
+    public void StopAllSounds()
+    {
+        foreach (AudioSource source in activeAudioSources)
+        {
+            if (source != null)
+            {
+                source.Stop();
+            }
+        }
+    }
+    
+    public void StopSoundsInCategory(string categoryName)
+    {
+        if (categorySources.ContainsKey(categoryName))
+        {
+            foreach (AudioSource source in categorySources[categoryName])
+            {
+                if (source != null)
+                {
+                    source.Stop();
+                }
+            }
+        }
+    }
+    
+    public void SetCategoryVolume(string categoryName, float volume)
+    {
+        SoundCategory category = GetSoundCategory(categoryName);
+        if (category != null)
+        {
+            category.categoryVolume = volume;
+            
+            // Apply to active sounds in category
+            if (categorySources.ContainsKey(categoryName))
+            {
+                foreach (AudioSource source in categorySources[categoryName])
+                {
+                    if (source != null)
+                    {
+                        source.volume = source.volume * volume;
+                    }
+                }
+            }
+        }
+    }
+    
+    public void SetGlobalVolume(float volume)
+    {
+        globalVolume = Mathf.Clamp01(volume);
+        
+        if (mainMixer != null)
+        {
+            mainMixer.SetFloat("MasterVolume", Mathf.Log10(globalVolume) * 20);
+        }
+    }
+    
+    // Debug information
+    public void LogAudioSystemStats()
+    {
+        Debug.Log($"Audio System Stats:");
+        Debug.Log($"  Active Sources: {activeAudioSources.Count}/{maxAudioSources}");
+        Debug.Log($"  Pool Size: {audioSourcePool.Count}");
+        Debug.Log($"  Total Audio Clips: {audioClipLookup.Count}");
+        
+        foreach (var category in soundCategories)
+        {
+            int activeCategorySounds = categorySources[category.categoryName].Count;
+            Debug.Log($"  Category '{category.categoryName}': {activeCategorySounds}/{category.maxConcurrentSounds} active");
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Dynamic Music and Adaptive Soundtracks</h2>
+                
+                <p>Modern games require music systems that adapt to gameplay situations, similar to how microservices might scale resources based on load or change behavior based on context. Unity's audio system allows you to create dynamic soundtracks that respond to game state, player actions, and environmental changes.</p>
+
+                <h3>Adaptive Music System</h3>
+
+                <div class="code-example">
+                    <h4>Dynamic Music Manager</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.Audio;
+using System.Collections;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class MusicTrack
+{
+    public string trackName;
+    public AudioClip audioClip;
+    public float volume = 0.7f;
+    public bool looping = true;
+    public string[] tags;
+    public MusicPriority priority = MusicPriority.Normal;
+}
+
+[System.Serializable]
+public class MusicLayer
+{
+    public string layerName;
+    public AudioClip audioClip;
+    public float volume = 0.5f;
+    public bool soloLayer = false; // Can this layer play alone?
+    public string[] requiredGameStates; // Game states that enable this layer
+    public string[] incompatibleLayers; // Layers that can't play with this one
+}
+
+[System.Serializable]
+public class AdaptiveMusicTrack
+{
+    public string trackName;
+    public MusicLayer[] layers;
+    public float crossfadeDuration = 2f;
+    public bool allowLayerSoloing = true;
+}
+
+public enum MusicPriority
+{
+    Low = 0,
+    Normal = 1,
+    High = 2,
+    Critical = 3
+}
+
+public enum MusicTransitionType
+{
+    Immediate,
+    Crossfade,
+    FadeOutFadeIn,
+    OnBeat,
+    OnMeasure
+}
+
+public class DynamicMusicManager : MonoBehaviour
+{
+    [Header("Music Library")]
+    public MusicTrack[] musicTracks;
+    public AdaptiveMusicTrack[] adaptiveTracks;
+    
+    [Header("Audio Configuration")]
+    public AudioMixerGroup musicMixerGroup;
+    public int maxMusicSources = 8;
+    
+    [Header("Transition Settings")]
+    public MusicTransitionType defaultTransitionType = MusicTransitionType.Crossfade;
+    public float defaultCrossfadeDuration = 2f;
+    public float defaultFadeOutDuration = 1f;
+    public float defaultFadeInDuration = 1f;
+    
+    [Header("Adaptive Music Settings")]
+    public bool enableAdaptiveMusic = true;
+    public float layerTransitionSpeed = 1f;
+    public AnimationCurve crossfadeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    
+    [Header("Beat Detection (Optional)")]
+    public bool enableBeatDetection = false;
+    public float bpm = 120f;
+    public int beatsPerMeasure = 4;
+    
+    // Music system state
+    private MusicTrack currentTrack;
+    private AdaptiveMusicTrack currentAdaptiveTrack;
+    private Dictionary&lt;string, bool&gt; currentGameStates = new Dictionary&lt;string, bool&gt;();
+    
+    // Audio source management
+    private List&lt;AudioSource&gt; musicAudioSources = new List&lt;AudioSource&gt;();
+    private Dictionary&lt;string, AudioSource&gt; layerAudioSources = new Dictionary&lt;string, AudioSource&gt;();
+    private Queue&lt;AudioSource&gt; availableAudioSources = new Queue&lt;AudioSource&gt;();
+    
+    // Transition management
+    private Coroutine currentTransition;
+    private List&lt;Coroutine&gt; activeLayerTransitions = new List&lt;Coroutine&gt;();
+    
+    // Beat synchronization
+    private float nextBeatTime;
+    private float nextMeasureTime;
+    private float beatInterval;
+    private float measureInterval;
+    
+    // Events
+    public System.Action&lt;string&gt; OnTrackChanged;
+    public System.Action&lt;string, float&gt; OnVolumeChanged;
+    public System.Action OnBeatDetected;
+    public System.Action OnMeasureDetected;
+    
+    // Singleton pattern
+    public static DynamicMusicManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        InitializeMusicSystem();
+    }
+    
+    void Start()
+    {
+        SetupBeatDetection();
+    }
+    
+    void Update()
+    {
+        if (enableBeatDetection)
+        {
+            UpdateBeatDetection();
+        }
+        
+        if (enableAdaptiveMusic)
+        {
+            UpdateAdaptiveMusic();
+        }
+    }
+    
+    void InitializeMusicSystem()
+    {
+        // Create audio sources for music playback
+        for (int i = 0; i &lt; maxMusicSources; i++)
+        {
+            GameObject audioSourceObj = new GameObject($"MusicAudioSource_{i}");
+            audioSourceObj.transform.SetParent(transform);
+            
+            AudioSource audioSource = audioSourceObj.AddComponent&lt;AudioSource&gt;();
+            ConfigureMusicAudioSource(audioSource);
+            
+            musicAudioSources.Add(audioSource);
+            availableAudioSources.Enqueue(audioSource);
+        }
+        
+        Debug.Log($"Dynamic Music Manager initialized with {maxMusicSources} audio sources");
+    }
+    
+    void ConfigureMusicAudioSource(AudioSource audioSource)
+    {
+        audioSource.outputAudioMixerGroup = musicMixerGroup;
+        audioSource.spatialBlend = 0f; // 2D audio for music
+        audioSource.playOnAwake = false;
+        audioSource.priority = 64; // High priority for music
+    }
+    
+    void SetupBeatDetection()
+    {
+        if (!enableBeatDetection) return;
+        
+        beatInterval = 60f / bpm;
+        measureInterval = beatInterval * beatsPerMeasure;
+        nextBeatTime = Time.time + beatInterval;
+        nextMeasureTime = Time.time + measureInterval;
+    }
+    
+    void UpdateBeatDetection()
+    {
+        float currentTime = Time.time;
+        
+        if (currentTime &gt;= nextBeatTime)
+        {
+            OnBeatDetected?.Invoke();
+            nextBeatTime += beatInterval;
+        }
+        
+        if (currentTime &gt;= nextMeasureTime)
+        {
+            OnMeasureDetected?.Invoke();
+            nextMeasureTime += measureInterval;
+        }
+    }
+    
+    void UpdateAdaptiveMusic()
+    {
+        if (currentAdaptiveTrack == null) return;
+        
+        // Check if layer states need updating based on game states
+        foreach (MusicLayer layer in currentAdaptiveTrack.layers)
+        {
+            bool shouldPlayLayer = ShouldLayerPlay(layer);
+            bool isCurrentlyPlaying = IsLayerPlaying(layer.layerName);
+            
+            if (shouldPlayLayer &amp;&amp; !isCurrentlyPlaying)
+            {
+                StartLayer(layer);
+            }
+            else if (!shouldPlayLayer &amp;&amp; isCurrentlyPlaying)
+            {
+                StopLayer(layer.layerName);
+            }
+        }
+    }
+    
+    // Public API for music control
+    public void PlayMusic(string trackName, MusicTransitionType transitionType = MusicTransitionType.Crossfade)
+    {
+        MusicTrack track = FindMusicTrack(trackName);
+        if (track == null)
+        {
+            Debug.LogWarning($"Music track '{trackName}' not found");
+            return;
+        }
+        
+        if (currentTransition != null)
+        {
+            StopCoroutine(currentTransition);
+        }
+        
+        switch (transitionType)
+        {
+            case MusicTransitionType.Immediate:
+                currentTransition = StartCoroutine(ImmediateTransition(track));
+                break;
+            case MusicTransitionType.Crossfade:
+                currentTransition = StartCoroutine(CrossfadeTransition(track, defaultCrossfadeDuration));
+                break;
+            case MusicTransitionType.FadeOutFadeIn:
+                currentTransition = StartCoroutine(FadeOutFadeInTransition(track));
+                break;
+            case MusicTransitionType.OnBeat:
+                StartCoroutine(WaitForBeatTransition(track));
+                break;
+            case MusicTransitionType.OnMeasure:
+                StartCoroutine(WaitForMeasureTransition(track));
+                break;
+        }
+    }
+    
+    public void PlayAdaptiveMusic(string adaptiveTrackName)
+    {
+        AdaptiveMusicTrack adaptiveTrack = FindAdaptiveMusicTrack(adaptiveTrackName);
+        if (adaptiveTrack == null)
+        {
+            Debug.LogWarning($"Adaptive music track '{adaptiveTrackName}' not found");
+            return;
+        }
+        
+        StopCurrentMusic();
+        currentAdaptiveTrack = adaptiveTrack;
+        
+        // Start base layers
+        foreach (MusicLayer layer in adaptiveTrack.layers)
+        {
+            if (ShouldLayerPlay(layer))
+            {
+                StartLayer(layer);
+            }
+        }
+    }
+    
+    public void StopMusic(float fadeOutDuration = -1f)
+    {
+        if (fadeOutDuration &lt; 0)
+        {
+            fadeOutDuration = defaultFadeOutDuration;
+        }
+        
+        if (currentTransition != null)
+        {
+            StopCoroutine(currentTransition);
+        }
+        
+        currentTransition = StartCoroutine(FadeOutCurrentMusic(fadeOutDuration));
+    }
+    
+    public void SetGameState(string stateName, bool active)
+    {
+        currentGameStates[stateName] = active;
+        
+        if (enableAdaptiveMusic)
+        {
+            Debug.Log($"Game state '{stateName}' set to {active}");
+        }
+    }
+    
+    public void SetMusicVolume(float volume)
+    {
+        foreach (AudioSource source in musicAudioSources)
+        {
+            if (source.isPlaying)
+            {
+                source.volume = volume;
+            }
+        }
+        
+        OnVolumeChanged?.Invoke("Music", volume);
+    }
+    
+    public void SetLayerVolume(string layerName, float volume)
+    {
+        if (layerAudioSources.ContainsKey(layerName))
+        {
+            layerAudioSources[layerName].volume = volume;
+        }
+    }
+    
+    // Layer management
+    void StartLayer(MusicLayer layer)
+    {
+        AudioSource audioSource = GetAvailableAudioSource();
+        if (audioSource == null)
+        {
+            Debug.LogWarning("No available audio sources for layer playback");
+            return;
+        }
+        
+        audioSource.clip = layer.audioClip;
+        audioSource.volume = 0f; // Start silent for fade in
+        audioSource.loop = true;
+        audioSource.Play();
+        
+        layerAudioSources[layer.layerName] = audioSource;
+        
+        // Fade in the layer
+        StartCoroutine(FadeInLayer(layer.layerName, layer.volume));
+        
+        Debug.Log($"Started music layer: {layer.layerName}");
+    }
+    
+    void StopLayer(string layerName)
+    {
+        if (layerAudioSources.ContainsKey(layerName))
+        {
+            AudioSource audioSource = layerAudioSources[layerName];
+            StartCoroutine(FadeOutLayer(layerName, layerTransitionSpeed));
+            
+            Debug.Log($"Stopping music layer: {layerName}");
+        }
+    }
+    
+    bool ShouldLayerPlay(MusicLayer layer)
+    {
+        // Check required game states
+        if (layer.requiredGameStates != null &amp;&amp; layer.requiredGameStates.Length &gt; 0)
+        {
+            foreach (string requiredState in layer.requiredGameStates)
+            {
+                if (!currentGameStates.ContainsKey(requiredState) || !currentGameStates[requiredState])
+                {
+                    return false;
+                }
+            }
+        }
+        
+        // Check incompatible layers
+        if (layer.incompatibleLayers != null &amp;&amp; layer.incompatibleLayers.Length &gt; 0)
+        {
+            foreach (string incompatibleLayer in layer.incompatibleLayers)
+            {
+                if (IsLayerPlaying(incompatibleLayer))
+                {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    bool IsLayerPlaying(string layerName)
+    {
+        return layerAudioSources.ContainsKey(layerName) &amp;&amp; 
+               layerAudioSources[layerName] != null &amp;&amp; 
+               layerAudioSources[layerName].isPlaying;
+    }
+    
+    // Transition implementations
+    IEnumerator ImmediateTransition(MusicTrack newTrack)
+    {
+        StopCurrentMusic();
+        
+        AudioSource audioSource = GetAvailableAudioSource();
+        if (audioSource != null)
+        {
+            PlayTrackOnSource(audioSource, newTrack);
+            currentTrack = newTrack;
+            OnTrackChanged?.Invoke(newTrack.trackName);
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator CrossfadeTransition(MusicTrack newTrack, float duration)
+    {
+        AudioSource oldSource = GetCurrentMusicSource();
+        AudioSource newSource = GetAvailableAudioSource();
+        
+        if (newSource == null) yield break;
+        
+        // Start new track at zero volume
+        PlayTrackOnSource(newSource, newTrack);
+        newSource.volume = 0f;
+        
+        float elapsedTime = 0f;
+        float oldStartVolume = oldSource != null ? oldSource.volume : 0f;
+        
+        while (elapsedTime &lt; duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / duration;
+            float easedT = crossfadeCurve.Evaluate(t);
+            
+            // Fade out old track
+            if (oldSource != null)
+            {
+                oldSource.volume = Mathf.Lerp(oldStartVolume, 0f, easedT);
+            }
+            
+            // Fade in new track
+            newSource.volume = Mathf.Lerp(0f, newTrack.volume, easedT);
+            
+            yield return null;
+        }
+        
+        // Clean up old source
+        if (oldSource != null)
+        {
+            oldSource.Stop();
+            ReturnAudioSourceToPool(oldSource);
+        }
+        
+        currentTrack = newTrack;
+        OnTrackChanged?.Invoke(newTrack.trackName);
+    }
+    
+    IEnumerator FadeOutFadeInTransition(MusicTrack newTrack)
+    {
+        // Fade out current music
+        yield return StartCoroutine(FadeOutCurrentMusic(defaultFadeOutDuration));
+        
+        // Wait a brief moment
+        yield return new WaitForSeconds(0.1f);
+        
+        // Fade in new music
+        yield return StartCoroutine(FadeInNewMusic(newTrack, defaultFadeInDuration));
+    }
+    
+    IEnumerator WaitForBeatTransition(MusicTrack newTrack)
+    {
+        // Wait for the next beat
+        yield return new WaitUntil(() =&gt; Time.time &gt;= nextBeatTime - 0.05f);
+        
+        // Execute immediate transition on beat
+        yield return StartCoroutine(ImmediateTransition(newTrack));
+    }
+    
+    IEnumerator WaitForMeasureTransition(MusicTrack newTrack)
+    {
+        // Wait for the next measure
+        yield return new WaitUntil(() =&gt; Time.time &gt;= nextMeasureTime - 0.05f);
+        
+        // Execute crossfade transition on measure
+        yield return StartCoroutine(CrossfadeTransition(newTrack, beatInterval));
+    }
+    
+    IEnumerator FadeOutCurrentMusic(float duration)
+    {
+        AudioSource currentSource = GetCurrentMusicSource();
+        if (currentSource == null) yield break;
+        
+        float startVolume = currentSource.volume;
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / duration;
+            currentSource.volume = Mathf.Lerp(startVolume, 0f, t);
+            yield return null;
+        }
+        
+        currentSource.Stop();
+        ReturnAudioSourceToPool(currentSource);
+        currentTrack = null;
+    }
+    
+    IEnumerator FadeInNewMusic(MusicTrack newTrack, float duration)
+    {
+        AudioSource audioSource = GetAvailableAudioSource();
+        if (audioSource == null) yield break;
+        
+        PlayTrackOnSource(audioSource, newTrack);
+        audioSource.volume = 0f;
+        
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / duration;
+            audioSource.volume = Mathf.Lerp(0f, newTrack.volume, t);
+            yield return null;
+        }
+        
+        currentTrack = newTrack;
+        OnTrackChanged?.Invoke(newTrack.trackName);
+    }
+    
+    IEnumerator FadeInLayer(string layerName, float targetVolume)
+    {
+        if (!layerAudioSources.ContainsKey(layerName)) yield break;
+        
+        AudioSource audioSource = layerAudioSources[layerName];
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; layerTransitionSpeed)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / layerTransitionSpeed;
+            audioSource.volume = Mathf.Lerp(0f, targetVolume, t);
+            yield return null;
+        }
+        
+        audioSource.volume = targetVolume;
+    }
+    
+    IEnumerator FadeOutLayer(string layerName, float duration)
+    {
+        if (!layerAudioSources.ContainsKey(layerName)) yield break;
+        
+        AudioSource audioSource = layerAudioSources[layerName];
+        float startVolume = audioSource.volume;
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / duration;
+            audioSource.volume = Mathf.Lerp(startVolume, 0f, t);
+            yield return null;
+        }
+        
+        audioSource.Stop();
+        ReturnAudioSourceToPool(audioSource);
+        layerAudioSources.Remove(layerName);
+    }
+    
+    // Helper methods
+    void PlayTrackOnSource(AudioSource audioSource, MusicTrack track)
+    {
+        audioSource.clip = track.audioClip;
+        audioSource.volume = track.volume;
+        audioSource.loop = track.looping;
+        audioSource.priority = (int)track.priority;
+        audioSource.Play();
+    }
+    
+    void StopCurrentMusic()
+    {
+        foreach (AudioSource source in musicAudioSources)
+        {
+            if (source.isPlaying)
+            {
+                source.Stop();
+            }
+        }
+        
+        // Stop all layers
+        foreach (var kvp in layerAudioSources)
+        {
+            kvp.Value.Stop();
+        }
+        
+        layerAudioSources.Clear();
+        currentTrack = null;
+        currentAdaptiveTrack = null;
+        
+        // Return all sources to pool
+        availableAudioSources.Clear();
+        foreach (AudioSource source in musicAudioSources)
+        {
+            availableAudioSources.Enqueue(source);
+        }
+    }
+    
+    AudioSource GetCurrentMusicSource()
+    {
+        foreach (AudioSource source in musicAudioSources)
+        {
+            if (source.isPlaying &amp;&amp; currentTrack != null &amp;&amp; source.clip == currentTrack.audioClip)
+            {
+                return source;
+            }
+        }
+        return null;
+    }
+    
+    AudioSource GetAvailableAudioSource()
+    {
+        if (availableAudioSources.Count &gt; 0)
+        {
+            return availableAudioSources.Dequeue();
+        }
+        
+        // Find a non-playing source
+        foreach (AudioSource source in musicAudioSources)
+        {
+            if (!source.isPlaying)
+            {
+                return source;
+            }
+        }
+        
+        return null;
+    }
+    
+    void ReturnAudioSourceToPool(AudioSource audioSource)
+    {
+        audioSource.Stop();
+        audioSource.clip = null;
+        availableAudioSources.Enqueue(audioSource);
+    }
+    
+    MusicTrack FindMusicTrack(string trackName)
+    {
+        foreach (MusicTrack track in musicTracks)
+        {
+            if (track.trackName == trackName)
+            {
+                return track;
+            }
+        }
+        return null;
+    }
+    
+    AdaptiveMusicTrack FindAdaptiveMusicTrack(string trackName)
+    {
+        foreach (AdaptiveMusicTrack track in adaptiveTracks)
+        {
+            if (track.trackName == trackName)
+            {
+                return track;
+            }
+        }
+        return null;
+    }
+    
+    // Debug methods
+    public void LogMusicSystemStatus()
+    {
+        Debug.Log("=== Music System Status ===");
+        Debug.Log($"Current Track: {(currentTrack?.trackName ?? "None")}");
+        Debug.Log($"Current Adaptive Track: {(currentAdaptiveTrack?.trackName ?? "None")}");
+        Debug.Log($"Active Layers: {layerAudioSources.Count}");
+        
+        foreach (var kvp in layerAudioSources)
+        {
+            Debug.Log($"  Layer '{kvp.Key}': Volume {kvp.Value.volume:F2}");
+        }
+        
+        Debug.Log($"Available Audio Sources: {availableAudioSources.Count}/{maxMusicSources}");
+        Debug.Log($"Active Game States: {currentGameStates.Count}");
+        
+        foreach (var kvp in currentGameStates)
+        {
+            Debug.Log($"  {kvp.Key}: {kvp.Value}");
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Particle Systems and Visual Effects</h2>
+                
+                <p>Unity's Particle System is like a specialized rendering microservice that generates and manages thousands of small visual elements efficiently. Think of particles as lightweight entities in a swarm system—each particle follows simple rules (physics, lifetime, color changes), but together they create complex emergent behaviors like fire, smoke, explosions, or magical effects.</p>
+
+                <h3>Particle System Manager</h3>
+
+                <div class="code-example">
+                    <h4>Advanced Particle Effects Controller</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+using System.Collections;
+
+[System.Serializable]
+public class ParticleEffectData
+{
+    public string effectName;
+    public ParticleSystem particlePrefab;
+    public bool autoDestroy = true;
+    public float lifetime = 5f;
+    public bool pooled = true;
+    public int poolSize = 5;
+    public LayerMask collisionLayers = -1;
+    public bool followTransform = false;
+    public Vector3 positionOffset = Vector3.zero;
+    public Vector3 rotationOffset = Vector3.zero;
+    public float scaleMultiplier = 1f;
+}
+
+[System.Serializable]
+public class ParticleModifierSettings
+{
+    [Header("Emission")]
+    public bool modifyEmission = false;
+    public AnimationCurve emissionOverTime = AnimationCurve.Constant(0, 1, 10);
+    public float emissionMultiplier = 1f;
+    
+    [Header("Size")]
+    public bool modifySize = false;
+    public AnimationCurve sizeOverLifetime = AnimationCurve.Linear(0, 1, 1, 0);
+    public float sizeMultiplier = 1f;
+    
+    [Header("Color")]
+    public bool modifyColor = false;
+    public Gradient colorOverLifetime = new Gradient();
+    
+    [Header("Velocity")]
+    public bool modifyVelocity = false;
+    public Vector3 velocityMultiplier = Vector3.one;
+    public AnimationCurve velocityOverLifetime = AnimationCurve.Linear(0, 1, 1, 1);
+}
+
+public class ParticleEffectsManager : MonoBehaviour
+{
+    [Header("Effect Library")]
+    public ParticleEffectData[] particleEffects;
+    
+    [Header("Performance Settings")]
+    public int maxActiveEffects = 50;
+    public bool enableLOD = true;
+    public float[] lodDistances = { 10f, 25f, 50f };
+    public bool enableCulling = true;
+    public float cullingDistance = 100f;
+    
+    [Header("Quality Settings")]
+    [Range(0.1f, 2f)]
+    public float globalParticleScale = 1f;
+    [Range(0.1f, 2f)]
+    public float globalEmissionRate = 1f;
+    public bool enableCollisions = true;
+    
+    // Effect pools and tracking
+    private Dictionary&lt;string, Queue&lt;ParticleSystem&gt;&gt; effectPools = new Dictionary&lt;string, Queue&lt;ParticleSystem&gt;&gt;();
+    private List&lt;ParticleSystem&gt; activeEffects = new List&lt;ParticleSystem&gt;();
+    private Dictionary&lt;ParticleSystem, ParticleEffectData&gt; effectDataLookup = new Dictionary&lt;ParticleSystem, ParticleEffectData&gt;();
+    private Dictionary&lt;ParticleSystem, Transform&gt; followTargets = new Dictionary&lt;ParticleSystem, Transform&gt;();
+    
+    // Performance tracking
+    private Camera mainCamera;
+    private Transform cameraTransform;
+    
+    // Singleton pattern
+    public static ParticleEffectsManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            InitializeParticleSystem();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    
+    void Start()
+    {
+        SetupCamera();
+        InitializeEffectPools();
+        ApplyQualitySettings();
+    }
+    
+    void Update()
+    {
+        UpdateActiveEffects();
+        
+        if (enableLOD || enableCulling)
+        {
+            UpdatePerformanceOptimizations();
+        }
+    }
+    
+    void InitializeParticleSystem()
+    {
+        // Initialize effect pools
+        foreach (ParticleEffectData effectData in particleEffects)
+        {
+            if (effectData.pooled)
+            {
+                effectPools[effectData.effectName] = new Queue&lt;ParticleSystem&gt;();
+            }
+        }
+        
+        Debug.Log($"Particle Effects Manager initialized with {particleEffects.Length} effect types");
+    }
+    
+    void SetupCamera()
+    {
+        mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            mainCamera = FindObjectOfType&lt;Camera&gt;();
+        }
+        
+        if (mainCamera != null)
+        {
+            cameraTransform = mainCamera.transform;
+        }
+    }
+    
+    void InitializeEffectPools()
+    {
+        foreach (ParticleEffectData effectData in particleEffects)
+        {
+            if (!effectData.pooled) continue;
+            
+            Queue&lt;ParticleSystem&gt; pool = effectPools[effectData.effectName];
+            
+            for (int i = 0; i &lt; effectData.poolSize; i++)
+            {
+                ParticleSystem pooledEffect = CreateParticleEffect(effectData);
+                pooledEffect.gameObject.SetActive(false);
+                pool.Enqueue(pooledEffect);
+            }
+        }
+    }
+    
+    void ApplyQualitySettings()
+    {
+        foreach (ParticleSystem activeEffect in activeEffects)
+        {
+            ApplyQualityToParticleSystem(activeEffect);
+        }
+    }
+    
+    void ApplyQualityToParticleSystem(ParticleSystem particles)
+    {
+        // Apply global scaling
+        var main = particles.main;
+        main.startSizeMultiplier *= globalParticleScale;
+        
+        // Apply emission rate scaling
+        var emission = particles.emission;
+        if (emission.enabled)
+        {
+            emission.rateOverTimeMultiplier *= globalEmissionRate;
+        }
+        
+        // Enable/disable collisions based on quality settings
+        var collision = particles.collision;
+        collision.enabled = enableCollisions;
+    }
+    
+    // Public API for playing effects
+    public ParticleSystem PlayEffect(string effectName, Vector3 position, Quaternion rotation = default, Transform parent = null)
+    {
+        ParticleEffectData effectData = GetEffectData(effectName);
+        if (effectData == null)
+        {
+            Debug.LogWarning($"Particle effect '{effectName}' not found");
+            return null;
+        }
+        
+        if (activeEffects.Count &gt;= maxActiveEffects)
+        {
+            Debug.LogWarning("Maximum active particle effects reached");
+            return null;
+        }
+        
+        ParticleSystem effect = GetParticleEffect(effectData);
+        if (effect == null) return null;
+        
+        // Configure position and rotation
+        effect.transform.position = position + effectData.positionOffset;
+        effect.transform.rotation = rotation * Quaternion.Euler(effectData.rotationOffset);
+        effect.transform.localScale = Vector3.one * (effectData.scaleMultiplier * globalParticleScale);
+        
+        // Set parent
+        if (parent != null)
+        {
+            effect.transform.SetParent(parent);
+            
+            if (effectData.followTransform)
+            {
+                followTargets[effect] = parent;
+            }
+        }
+        
+        // Apply quality settings
+        ApplyQualityToParticleSystem(effect);
+        
+        // Play the effect
+        effect.gameObject.SetActive(true);
+        effect.Play();
+        
+        // Track active effect
+        activeEffects.Add(effect);
+        effectDataLookup[effect] = effectData;
+        
+        // Auto-cleanup if enabled
+        if (effectData.autoDestroy)
+        {
+            StartCoroutine(AutoDestroyEffect(effect, effectData.lifetime));
+        }
+        
+        return effect;
+    }
+    
+    public ParticleSystem PlayEffectAtTarget(string effectName, Transform target, bool followTarget = false)
+    {
+        ParticleSystem effect = PlayEffect(effectName, target.position, target.rotation, followTarget ? target : null);
+        
+        if (effect != null &amp;&amp; followTarget)
+        {
+            ParticleEffectData effectData = effectDataLookup[effect];
+            effectData.followTransform = true;
+            followTargets[effect] = target;
+        }
+        
+        return effect;
+    }
+    
+    public void StopEffect(ParticleSystem effect, bool immediate = false)
+    {
+        if (effect == null) return;
+        
+        if (immediate)
+        {
+            effect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ReturnEffectToPool(effect);
+        }
+        else
+        {
+            effect.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            StartCoroutine(WaitForEffectToFinish(effect));
+        }
+    }
+    
+    public void StopAllEffects(bool immediate = false)
+    {
+        for (int i = activeEffects.Count - 1; i &gt;= 0; i--)
+        {
+            StopEffect(activeEffects[i], immediate);
+        }
+    }
+    
+    public ParticleSystem CreateCustomEffect(ParticleEffectData effectData, ParticleModifierSettings modifiers)
+    {
+        ParticleSystem effect = GetParticleEffect(effectData);
+        if (effect == null) return null;
+        
+        ApplyParticleModifiers(effect, modifiers);
+        return effect;
+    }
+    
+    // Effect management
+    ParticleEffectData GetEffectData(string effectName)
+    {
+        foreach (ParticleEffectData effectData in particleEffects)
+        {
+            if (effectData.effectName == effectName)
+            {
+                return effectData;
+            }
+        }
+        return null;
+    }
+    
+    ParticleSystem GetParticleEffect(ParticleEffectData effectData)
+    {
+        if (effectData.pooled &amp;&amp; effectPools.ContainsKey(effectData.effectName))
+        {
+            Queue&lt;ParticleSystem&gt; pool = effectPools[effectData.effectName];
+            
+            if (pool.Count &gt; 0)
+            {
+                return pool.Dequeue();
+            }
+        }
+        
+        // Create new instance
+        return CreateParticleEffect(effectData);
+    }
+    
+    ParticleSystem CreateParticleEffect(ParticleEffectData effectData)
+    {
+        GameObject effectObj = Instantiate(effectData.particlePrefab.gameObject);
+        effectObj.transform.SetParent(transform);
+        
+        ParticleSystem particles = effectObj.GetComponent&lt;ParticleSystem&gt;();
+        return particles;
+    }
+    
+    void ReturnEffectToPool(ParticleSystem effect)
+    {
+        if (effect == null) return;
+        
+        // Clean up tracking
+        activeEffects.Remove(effect);
+        followTargets.Remove(effect);
+        
+        ParticleEffectData effectData;
+        if (effectDataLookup.TryGetValue(effect, out effectData))
+        {
+            if (effectData.pooled)
+            {
+                effect.gameObject.SetActive(false);
+                effect.transform.SetParent(transform);
+                effectPools[effectData.effectName].Enqueue(effect);
+                return;
+            }
+            
+            effectDataLookup.Remove(effect);
+        }
+        
+        // Not pooled - destroy it
+        Destroy(effect.gameObject);
+    }
+    
+    void UpdateActiveEffects()
+    {
+        for (int i = activeEffects.Count - 1; i &gt;= 0; i--)
+        {
+            ParticleSystem effect = activeEffects[i];
+            
+            if (effect == null)
+            {
+                activeEffects.RemoveAt(i);
+                continue;
+            }
+            
+            // Update follow targets
+            if (followTargets.ContainsKey(effect))
+            {
+                Transform target = followTargets[effect];
+                if (target != null &amp;&amp; effectDataLookup.ContainsKey(effect))
+                {
+                    ParticleEffectData effectData = effectDataLookup[effect];
+                    effect.transform.position = target.position + effectData.positionOffset;
+                    effect.transform.rotation = target.rotation * Quaternion.Euler(effectData.rotationOffset);
+                }
+            }
+            
+            // Check if effect has finished playing
+            if (!effect.IsAlive() &amp;&amp; !effect.isEmitting)
+            {
+                ReturnEffectToPool(effect);
+            }
+        }
+    }
+    
+    void UpdatePerformanceOptimizations()
+    {
+        if (cameraTransform == null) return;
+        
+        Vector3 cameraPosition = cameraTransform.position;
+        
+        foreach (ParticleSystem effect in activeEffects)
+        {
+            if (effect == null) continue;
+            
+            float distance = Vector3.Distance(effect.transform.position, cameraPosition);
+            
+            // Culling
+            if (enableCulling &amp;&amp; distance &gt; cullingDistance)
+            {
+                if (effect.gameObject.activeInHierarchy)
+                {
+                    effect.gameObject.SetActive(false);
+                }
+                continue;
+            }
+            else if (!effect.gameObject.activeInHierarchy)
+            {
+                effect.gameObject.SetActive(true);
+            }
+            
+            // LOD system
+            if (enableLOD)
+            {
+                ApplyLODToEffect(effect, distance);
+            }
+        }
+    }
+    
+    void ApplyLODToEffect(ParticleSystem effect, float distance)
+    {
+        int lodLevel = GetLODLevel(distance);
+        
+        var emission = effect.emission;
+        var main = effect.main;
+        
+        switch (lodLevel)
+        {
+            case 0: // High quality - close
+                emission.rateOverTimeMultiplier = globalEmissionRate;
+                main.maxParticles = (int)(main.maxParticles * 1f);
+                break;
+            case 1: // Medium quality
+                emission.rateOverTimeMultiplier = globalEmissionRate * 0.7f;
+                main.maxParticles = (int)(main.maxParticles * 0.7f);
+                break;
+            case 2: // Low quality
+                emission.rateOverTimeMultiplier = globalEmissionRate * 0.4f;
+                main.maxParticles = (int)(main.maxParticles * 0.4f);
+                break;
+            case 3: // Very low quality - far
+                emission.rateOverTimeMultiplier = globalEmissionRate * 0.2f;
+                main.maxParticles = (int)(main.maxParticles * 0.2f);
+                break;
+        }
+    }
+    
+    int GetLODLevel(float distance)
+    {
+        for (int i = 0; i &lt; lodDistances.Length; i++)
+        {
+            if (distance &lt;= lodDistances[i])
+            {
+                return i;
+            }
+        }
+        return lodDistances.Length; // Furthest LOD level
+    }
+    
+    void ApplyParticleModifiers(ParticleSystem effect, ParticleModifierSettings modifiers)
+    {
+        if (modifiers == null) return;
+        
+        // Emission modifications
+        if (modifiers.modifyEmission)
+        {
+            var emission = effect.emission;
+            emission.rateOverTime = new ParticleSystem.MinMaxCurve(modifiers.emissionMultiplier, modifiers.emissionOverTime);
+        }
+        
+        // Size modifications
+        if (modifiers.modifySize)
+        {
+            var sizeOverLifetime = effect.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(modifiers.sizeMultiplier, modifiers.sizeOverLifetime);
+        }
+        
+        // Color modifications
+        if (modifiers.modifyColor)
+        {
+            var colorOverLifetime = effect.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            colorOverLifetime.color = modifiers.colorOverLifetime;
+        }
+        
+        // Velocity modifications
+        if (modifiers.modifyVelocity)
+        {
+            var velocityOverLifetime = effect.velocityOverLifetime;
+            velocityOverLifetime.enabled = true;
+            velocityOverLifetime.space = ParticleSystemSimulationSpace.Local;
+            
+            velocityOverLifetime.x = new ParticleSystem.MinMaxCurve(modifiers.velocityMultiplier.x, modifiers.velocityOverLifetime);
+            velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(modifiers.velocityMultiplier.y, modifiers.velocityOverLifetime);
+            velocityOverLifetime.z = new ParticleSystem.MinMaxCurve(modifiers.velocityMultiplier.z, modifiers.velocityOverLifetime);
+        }
+    }
+    
+    // Coroutines
+    IEnumerator AutoDestroyEffect(ParticleSystem effect, float lifetime)
+    {
+        yield return new WaitForSeconds(lifetime);
+        
+        if (effect != null)
+        {
+            StopEffect(effect);
+        }
+    }
+    
+    IEnumerator WaitForEffectToFinish(ParticleSystem effect)
+    {
+        yield return new WaitUntil(() =&gt; effect == null || (!effect.IsAlive() &amp;&amp; !effect.isEmitting));
+        
+        if (effect != null)
+        {
+            ReturnEffectToPool(effect);
+        }
+    }
+    
+    // Public utility methods
+    public void SetGlobalParticleScale(float scale)
+    {
+        globalParticleScale = Mathf.Clamp(scale, 0.1f, 2f);
+        ApplyQualitySettings();
+    }
+    
+    public void SetGlobalEmissionRate(float rate)
+    {
+        globalEmissionRate = Mathf.Clamp(rate, 0.1f, 2f);
+        ApplyQualitySettings();
+    }
+    
+    public int GetActiveEffectCount()
+    {
+        return activeEffects.Count;
+    }
+    
+    public float GetTotalParticleCount()
+    {
+        float totalParticles = 0;
+        
+        foreach (ParticleSystem effect in activeEffects)
+        {
+            if (effect != null)
+            {
+                totalParticles += effect.particleCount;
+            }
+        }
+        
+        return totalParticles;
+    }
+    
+    // Debug methods
+    public void LogParticleSystemStats()
+    {
+        Debug.Log("=== Particle System Stats ===");
+        Debug.Log($"Active Effects: {activeEffects.Count}/{maxActiveEffects}");
+        Debug.Log($"Total Particles: {GetTotalParticleCount():F0}");
+        Debug.Log($"Global Scale: {globalParticleScale:F2}");
+        Debug.Log($"Global Emission Rate: {globalEmissionRate:F2}");
+        
+        foreach (var pool in effectPools)
+        {
+            Debug.Log($"Pool '{pool.Key}': {pool.Value.Count} available");
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Post-Processing Effects</h2>
+                
+                <p>Unity's post-processing system acts like middleware that intercepts rendered frames and applies visual transformations before displaying them to the player. Think of it as a pipeline of image filters, similar to how you might chain middleware functions in a web application to transform HTTP requests and responses.</p>
+
+                <h3>Post-Processing Manager</h3>
+
+                <div class="code-example">
+                    <h4>Dynamic Post-Processing Controller</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using System.Collections;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class PostProcessProfile
+{
+    public string profileName;
+    public VolumeProfile volumeProfile;
+    public float transitionDuration = 1f;
+    public AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public bool allowMultipleEffects = true;
+}
+
+[System.Serializable]
+public class EffectOverride
+{
+    public string effectName;
+    public bool enabled;
+    public float intensity = 1f;
+    public float duration = -1f; // -1 = permanent
+    public AnimationCurve intensityCurve = AnimationCurve.Linear(0, 1, 1, 1);
+}
+
+public class PostProcessingManager : MonoBehaviour
+{
+    [Header("Post-Process Configuration")]
+    public Volume globalVolume;
+    public PostProcessProfile[] profiles;
+    public Camera[] targetCameras;
+    
+    [Header("Dynamic Effects")]
+    public float defaultTransitionSpeed = 1f;
+    public bool enableHealthEffects = true;
+    public bool enableEnvironmentalEffects = true;
+    public bool enableCombatEffects = true;
+    
+    [Header("Performance Settings")]
+    public bool enableQualityScaling = true;
+    public float performanceThreshold = 30f; // Target FPS
+    
+    // Current state
+    private VolumeProfile currentProfile;
+    private PostProcessProfile activeProfile;
+    private Dictionary&lt;string, Coroutine&gt; activeTransitions = new Dictionary&lt;string, Coroutine&gt;();
+    private Dictionary&lt;string, float&gt; effectIntensities = new Dictionary&lt;string, float&gt;();
+    
+    // Component references
+    private Bloom bloomComponent;
+    private ColorAdjustments colorAdjustmentsComponent;
+    private Vignette vignetteComponent;
+    private ChromaticAberration chromaticAberrationComponent;
+    private FilmGrain filmGrainComponent;
+    private DepthOfField depthOfFieldComponent;
+    private MotionBlur motionBlurComponent;
+    
+    // Performance tracking
+    private float[] frameTimeHistory = new float[60];
+    private int frameTimeIndex = 0;
+    private float averageFrameTime = 0f;
+    
+    // Events
+    public System.Action&lt;string&gt; OnProfileChanged;
+    public System.Action&lt;string, float&gt; OnEffectIntensityChanged;
+    
+    // Singleton pattern
+    public static PostProcessingManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        InitializePostProcessing();
+    }
+    
+    void Start()
+    {
+        SetupDefaultProfile();
+        CachePostProcessComponents();
+    }
+    
+    void Update()
+    {
+        if (enableQualityScaling)
+        {
+            UpdatePerformanceTracking();
+            CheckPerformanceThresholds();
+        }
+    }
+    
+    void InitializePostProcessing()
+    {
+        // Ensure we have a global volume
+        if (globalVolume == null)
+        {
+            globalVolume = FindObjectOfType&lt;Volume&gt;();
+            
+            if (globalVolume == null)
+            {
+                Debug.LogWarning("No Volume found - creating default global volume");
+                CreateDefaultGlobalVolume();
+            }
+        }
+        
+        // Setup target cameras
+        if (targetCameras == null || targetCameras.Length == 0)
+        {
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                targetCameras = new Camera[] { mainCamera };
+            }
+        }
+        
+        Debug.Log($"Post-Processing Manager initialized with {profiles.Length} profiles");
+    }
+    
+    void CreateDefaultGlobalVolume()
+    {
+        GameObject volumeObj = new GameObject("Global Post-Process Volume");
+        volumeObj.transform.SetParent(transform);
+        
+        globalVolume = volumeObj.AddComponent&lt;Volume&gt;();
+        globalVolume.isGlobal = true;
+        globalVolume.priority = 0;
+        
+        // Create a basic volume profile
+        VolumeProfile profile = ScriptableObject.CreateInstance&lt;VolumeProfile&gt;();
+        globalVolume.profile = profile;
+    }
+    
+    void SetupDefaultProfile()
+    {
+        if (profiles.Length &gt; 0 &amp;&amp; globalVolume.profile != null)
+        {
+            SetProfile(profiles[0].profileName, 0f);
+        }
+    }
+    
+    void CachePostProcessComponents()
+    {
+        if (globalVolume.profile == null) return;
+        
+        // Cache common post-process components for faster access
+        globalVolume.profile.TryGet(out bloomComponent);
+        globalVolume.profile.TryGet(out colorAdjustmentsComponent);
+        globalVolume.profile.TryGet(out vignetteComponent);
+        globalVolume.profile.TryGet(out chromaticAberrationComponent);
+        globalVolume.profile.TryGet(out filmGrainComponent);
+        globalVolume.profile.TryGet(out depthOfFieldComponent);
+        globalVolume.profile.TryGet(out motionBlurComponent);
+    }
+    
+    // Profile management
+    public void SetProfile(string profileName, float transitionDuration = -1f)
+    {
+        PostProcessProfile profile = FindProfile(profileName);
+        if (profile == null)
+        {
+            Debug.LogWarning($"Post-process profile '{profileName}' not found");
+            return;
+        }
+        
+        if (transitionDuration &lt; 0)
+        {
+            transitionDuration = profile.transitionDuration;
+        }
+        
+        if (transitionDuration &lt;= 0f)
+        {
+            ApplyProfileImmediate(profile);
+        }
+        else
+        {
+            StartCoroutine(TransitionToProfile(profile, transitionDuration));
+        }
+    }
+    
+    void ApplyProfileImmediate(PostProcessProfile profile)
+    {
+        globalVolume.profile = profile.volumeProfile;
+        currentProfile = profile.volumeProfile;
+        activeProfile = profile;
+        
+        CachePostProcessComponents();
+        OnProfileChanged?.Invoke(profile.profileName);
+        
+        Debug.Log($"Applied post-process profile: {profile.profileName}");
+    }
+    
+    IEnumerator TransitionToProfile(PostProcessProfile targetProfile, float duration)
+    {
+        if (currentProfile == null)
+        {
+            ApplyProfileImmediate(targetProfile);
+            yield break;
+        }
+        
+        // Create temporary profile for blending
+        VolumeProfile tempProfile = ScriptableObject.CreateInstance&lt;VolumeProfile&gt;();
+        globalVolume.profile = tempProfile;
+        
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsedTime / duration);
+            float easedT = targetProfile.transitionCurve.Evaluate(t);
+            
+            BlendProfiles(tempProfile, currentProfile, targetProfile.volumeProfile, easedT);
+            
+            yield return null;
+        }
+        
+        // Finalize transition
+        ApplyProfileImmediate(targetProfile);
+        
+        // Clean up temporary profile
+        if (tempProfile != null)
+        {
+            DestroyImmediate(tempProfile);
+        }
+    }
+    
+    void BlendProfiles(VolumeProfile result, VolumeProfile profileA, VolumeProfile profileB, float t)
+    {
+        // This is a simplified example - in practice you'd need to blend each component type
+        // For demonstration, we'll blend common effects
+        
+        BlendColorAdjustments(result, profileA, profileB, t);
+        BlendBloom(result, profileA, profileB, t);
+        BlendVignette(result, profileA, profileB, t);
+    }
+    
+    void BlendColorAdjustments(VolumeProfile result, VolumeProfile profileA, VolumeProfile profileB, float t)
+    {
+        ColorAdjustments colorA, colorB;
+        profileA.TryGet(out colorA);
+        profileB.TryGet(out colorB);
+        
+        if (colorA == null &amp;&amp; colorB == null) return;
+        
+        ColorAdjustments resultColor = result.Add&lt;ColorAdjustments&gt;();
+        
+        if (colorA != null &amp;&amp; colorB != null)
+        {
+            resultColor.postExposure.value = Mathf.Lerp(colorA.postExposure.value, colorB.postExposure.value, t);
+            resultColor.contrast.value = Mathf.Lerp(colorA.contrast.value, colorB.contrast.value, t);
+            resultColor.colorFilter.value = Color.Lerp(colorA.colorFilter.value, colorB.colorFilter.value, t);
+            resultColor.hueShift.value = Mathf.Lerp(colorA.hueShift.value, colorB.hueShift.value, t);
+            resultColor.saturation.value = Mathf.Lerp(colorA.saturation.value, colorB.saturation.value, t);
+        }
+        else if (colorB != null)
+        {
+            CopyColorAdjustments(resultColor, colorB, t);
+        }
+    }
+    
+    void BlendBloom(VolumeProfile result, VolumeProfile profileA, VolumeProfile profileB, float t)
+    {
+        Bloom bloomA, bloomB;
+        profileA.TryGet(out bloomA);
+        profileB.TryGet(out bloomB);
+        
+        if (bloomA == null &amp;&amp; bloomB == null) return;
+        
+        Bloom resultBloom = result.Add&lt;Bloom&gt;();
+        
+        if (bloomA != null &amp;&amp; bloomB != null)
+        {
+            resultBloom.threshold.value = Mathf.Lerp(bloomA.threshold.value, bloomB.threshold.value, t);
+            resultBloom.intensity.value = Mathf.Lerp(bloomA.intensity.value, bloomB.intensity.value, t);
+            resultBloom.scatter.value = Mathf.Lerp(bloomA.scatter.value, bloomB.scatter.value, t);
+        }
+        else if (bloomB != null)
+        {
+            CopyBloom(resultBloom, bloomB, t);
+        }
+    }
+    
+    void BlendVignette(VolumeProfile result, VolumeProfile profileA, VolumeProfile profileB, float t)
+    {
+        Vignette vignetteA, vignetteB;
+        profileA.TryGet(out vignetteA);
+        profileB.TryGet(out vignetteB);
+        
+        if (vignetteA == null &amp;&amp; vignetteB == null) return;
+        
+        Vignette resultVignette = result.Add&lt;Vignette&gt;();
+        
+        if (vignetteA != null &amp;&amp; vignetteB != null)
+        {
+            resultVignette.color.value = Color.Lerp(vignetteA.color.value, vignetteB.color.value, t);
+            resultVignette.intensity.value = Mathf.Lerp(vignetteA.intensity.value, vignetteB.intensity.value, t);
+            resultVignette.smoothness.value = Mathf.Lerp(vignetteA.smoothness.value, vignetteB.smoothness.value, t);
+        }
+        else if (vignetteB != null)
+        {
+            CopyVignette(resultVignette, vignetteB, t);
+        }
+    }
+    
+    // Dynamic effect control
+    public void SetEffectIntensity(string effectName, float intensity, float duration = 0f)
+    {
+        if (activeTransitions.ContainsKey(effectName))
+        {
+            StopCoroutine(activeTransitions[effectName]);
+            activeTransitions.Remove(effectName);
+        }
+        
+        if (duration &lt;= 0f)
+        {
+            ApplyEffectIntensity(effectName, intensity);
+        }
+        else
+        {
+            float startIntensity = GetEffectIntensity(effectName);
+            activeTransitions[effectName] = StartCoroutine(TransitionEffectIntensity(effectName, startIntensity, intensity, duration));
+        }
+    }
+    
+    IEnumerator TransitionEffectIntensity(string effectName, float startIntensity, float targetIntensity, float duration)
+    {
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / duration;
+            float currentIntensity = Mathf.Lerp(startIntensity, targetIntensity, t);
+            
+            ApplyEffectIntensity(effectName, currentIntensity);
+            
+            yield return null;
+        }
+        
+        ApplyEffectIntensity(effectName, targetIntensity);
+        activeTransitions.Remove(effectName);
+    }
+    
+    void ApplyEffectIntensity(string effectName, float intensity)
+    {
+        effectIntensities[effectName] = intensity;
+        
+        switch (effectName.ToLower())
+        {
+            case "bloom":
+                ApplyBloomIntensity(intensity);
+                break;
+            case "vignette":
+                ApplyVignetteIntensity(intensity);
+                break;
+            case "coloradjustments":
+            case "color":
+                ApplyColorAdjustmentsIntensity(intensity);
+                break;
+            case "chromaticaberration":
+                ApplyChromaticAberrationIntensity(intensity);
+                break;
+            case "filmgrain":
+                ApplyFilmGrainIntensity(intensity);
+                break;
+            case "depthoffield":
+            case "dof":
+                ApplyDepthOfFieldIntensity(intensity);
+                break;
+        }
+        
+        OnEffectIntensityChanged?.Invoke(effectName, intensity);
+    }
+    
+    void ApplyBloomIntensity(float intensity)
+    {
+        if (bloomComponent != null)
+        {
+            bloomComponent.intensity.value = intensity;
+        }
+    }
+    
+    void ApplyVignetteIntensity(float intensity)
+    {
+        if (vignetteComponent != null)
+        {
+            vignetteComponent.intensity.value = intensity;
+        }
+    }
+    
+    void ApplyColorAdjustmentsIntensity(float intensity)
+    {
+        if (colorAdjustmentsComponent != null)
+        {
+            colorAdjustmentsComponent.contrast.value = intensity;
+        }
+    }
+    
+    void ApplyChromaticAberrationIntensity(float intensity)
+    {
+        if (chromaticAberrationComponent != null)
+        {
+            chromaticAberrationComponent.intensity.value = intensity;
+        }
+    }
+    
+    void ApplyFilmGrainIntensity(float intensity)
+    {
+        if (filmGrainComponent != null)
+        {
+            filmGrainComponent.intensity.value = intensity;
+        }
+    }
+    
+    void ApplyDepthOfFieldIntensity(float intensity)
+    {
+        if (depthOfFieldComponent != null)
+        {
+            depthOfFieldComponent.focusDistance.value = intensity * 10f; // Example mapping
+        }
+    }
+    
+    // Gameplay effect integration
+    public void ApplyHealthEffect(float healthPercentage)
+    {
+        if (!enableHealthEffects) return;
+        
+        // Red vignette and desaturation when health is low
+        float healthEffect = 1f - healthPercentage;
+        SetEffectIntensity("vignette", healthEffect * 0.6f, 0.5f);
+        
+        if (colorAdjustmentsComponent != null)
+        {
+            colorAdjustmentsComponent.saturation.value = -healthEffect * 50f;
+            colorAdjustmentsComponent.colorFilter.value = Color.Lerp(Color.white, Color.red, healthEffect * 0.3f);
+        }
+    }
+    
+    public void ApplyCombatEffect(bool inCombat)
+    {
+        if (!enableCombatEffects) return;
+        
+        if (inCombat)
+        {
+            SetEffectIntensity("chromaticaberration", 0.5f, 0.3f);
+            SetEffectIntensity("bloom", 1.2f, 0.3f);
+        }
+        else
+        {
+            SetEffectIntensity("chromaticaberration", 0f, 1f);
+            SetEffectIntensity("bloom", 1f, 1f);
+        }
+    }
+    
+    public void ApplyEnvironmentalEffect(string environment)
+    {
+        if (!enableEnvironmentalEffects) return;
+        
+        switch (environment.ToLower())
+        {
+            case "underwater":
+                SetEffectIntensity("chromaticaberration", 0.3f, 2f);
+                if (colorAdjustmentsComponent != null)
+                {
+                    colorAdjustmentsComponent.colorFilter.value = new Color(0.7f, 0.9f, 1f, 1f);
+                }
+                break;
+                
+            case "desert":
+                SetEffectIntensity("bloom", 1.5f, 2f);
+                if (colorAdjustmentsComponent != null)
+                {
+                    colorAdjustmentsComponent.postExposure.value = 0.5f;
+                    colorAdjustmentsComponent.colorFilter.value = new Color(1f, 0.9f, 0.8f, 1f);
+                }
+                break;
+                
+            case "night":
+                if (colorAdjustmentsComponent != null)
+                {
+                    colorAdjustmentsComponent.postExposure.value = -1f;
+                    colorAdjustmentsComponent.colorFilter.value = new Color(0.8f, 0.8f, 1f, 1f);
+                }
+                break;
+        }
+    }
+    
+    // Performance management
+    void UpdatePerformanceTracking()
+    {
+        frameTimeHistory[frameTimeIndex] = Time.deltaTime;
+        frameTimeIndex = (frameTimeIndex + 1) % frameTimeHistory.Length;
+        
+        // Calculate average frame time
+        float total = 0f;
+        for (int i = 0; i &lt; frameTimeHistory.Length; i++)
+        {
+            total += frameTimeHistory[i];
+        }
+        averageFrameTime = total / frameTimeHistory.Length;
+    }
+    
+    void CheckPerformanceThresholds()
+    {
+        float currentFPS = 1f / averageFrameTime;
+        
+        if (currentFPS &lt; performanceThreshold)
+        {
+            ReducePostProcessingQuality();
+        }
+        else if (currentFPS &gt; performanceThreshold * 1.2f)
+        {
+            IncreasePostProcessingQuality();
+        }
+    }
+    
+    void ReducePostProcessingQuality()
+    {
+        // Reduce quality by lowering effect intensities
+        SetEffectIntensity("bloom", GetEffectIntensity("bloom") * 0.8f);
+        SetEffectIntensity("filmgrain", GetEffectIntensity("filmgrain") * 0.5f);
+        
+        Debug.Log("Reduced post-processing quality due to performance");
+    }
+    
+    void IncreasePostProcessingQuality()
+    {
+        // Gradually increase quality back to normal levels
+        // Implementation depends on your quality management strategy
+    }
+    
+    // Helper methods
+    PostProcessProfile FindProfile(string profileName)
+    {
+        foreach (PostProcessProfile profile in profiles)
+        {
+            if (profile.profileName == profileName)
+            {
+                return profile;
+            }
+        }
+        return null;
+    }
+    
+    float GetEffectIntensity(string effectName)
+    {
+        return effectIntensities.ContainsKey(effectName) ? effectIntensities[effectName] : 0f;
+    }
+    
+    void CopyColorAdjustments(ColorAdjustments target, ColorAdjustments source, float intensity)
+    {
+        target.postExposure.value = source.postExposure.value * intensity;
+        target.contrast.value = source.contrast.value * intensity;
+        target.colorFilter.value = Color.Lerp(Color.white, source.colorFilter.value, intensity);
+        target.hueShift.value = source.hueShift.value * intensity;
+        target.saturation.value = source.saturation.value * intensity;
+    }
+    
+    void CopyBloom(Bloom target, Bloom source, float intensity)
+    {
+        target.threshold.value = source.threshold.value;
+        target.intensity.value = source.intensity.value * intensity;
+        target.scatter.value = source.scatter.value;
+    }
+    
+    void CopyVignette(Vignette target, Vignette source, float intensity)
+    {
+        target.color.value = Color.Lerp(Color.white, source.color.value, intensity);
+        target.intensity.value = source.intensity.value * intensity;
+        target.smoothness.value = source.smoothness.value;
+    }
+    
+    // Debug methods
+    public void LogPostProcessingStats()
+    {
+        Debug.Log("=== Post-Processing Stats ===");
+        Debug.Log($"Active Profile: {(activeProfile?.profileName ?? "None")}");
+        Debug.Log($"Average FPS: {1f / averageFrameTime:F1}");
+        Debug.Log($"Active Transitions: {activeTransitions.Count}");
+        
+        foreach (var intensity in effectIntensities)
+        {
+            Debug.Log($"Effect '{intensity.Key}': {intensity.Value:F2}");
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Practical Integration: Audio-Visual Feedback System</h2>
+                
+                <p>The true power of Unity's audio and visual effects systems emerges when they work together to create cohesive player feedback. Let's create a comprehensive system that coordinates audio, particles, and post-processing to respond to game events.</p>
+
+                <div class="code-example">
+                    <h4>Integrated Audio-Visual Feedback Manager</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+using System.Collections;
+
+[System.Serializable]
+public class FeedbackEffect
+{
+    [Header("Identification")]
+    public string effectName;
+    public string description;
+    
+    [Header("Audio")]
+    public bool playAudio = true;
+    public string audioClipName;
+    public float audioVolume = 1f;
+    public float audioPitch = 1f;
+    public bool audioIs3D = true;
+    
+    [Header("Particles")]
+    public bool playParticles = true;
+    public string particleEffectName;
+    public Vector3 particleOffset = Vector3.zero;
+    public float particleScale = 1f;
+    
+    [Header("Post-Processing")]
+    public bool usePostProcessing = false;
+    public string postProcessEffect;
+    public float postProcessIntensity = 1f;
+    public float postProcessDuration = 1f;
+    
+    [Header("Screen Effects")]
+    public bool useScreenShake = false;
+    public float shakeIntensity = 1f;
+    public float shakeDuration = 0.3f;
+    
+    [Header("Timing")]
+    public float delay = 0f;
+    public float totalDuration = 2f;
+}
+
+[System.Serializable]
+public class ContextualFeedback
+{
+    public string contextName;
+    public FeedbackEffect[] contextEffects;
+    public float contextPriority = 1f;
+    public bool allowInterruption = true;
+}
+
+public class AudioVisualFeedbackManager : MonoBehaviour
+{
+    [Header("Feedback Library")]
+    public FeedbackEffect[] feedbackEffects;
+    public ContextualFeedback[] contextualFeedbacks;
+    
+    [Header("Screen Shake Settings")]
+    public Transform cameraTransform;
+    public float shakeDecay = 5f;
+    public float shakeMaxDistance = 0.1f;
+    
+    [Header("Integration Settings")]
+    public bool enableAudioIntegration = true;
+    public bool enableParticleIntegration = true;
+    public bool enablePostProcessIntegration = true;
+    public bool enableScreenShake = true;
+    
+    [Header("Performance")]
+    public int maxConcurrentEffects = 10;
+    public float effectCullingDistance = 50f;
+    
+    // Effect management
+    private Dictionary&lt;string, FeedbackEffect&gt; effectLookup = new Dictionary&lt;string, FeedbackEffect&gt;();
+    private Dictionary&lt;string, ContextualFeedback&gt; contextLookup = new Dictionary&lt;string, ContextualFeedback&gt;();
+    private List&lt;Coroutine&gt; activeFeedbackCoroutines = new List&lt;Coroutine&gt;();
+    
+    // Screen shake state
+    private Vector3 originalCameraPosition;
+    private float currentShakeIntensity = 0f;
+    private bool isShaking = false;
+    
+    // Context management
+    private string currentContext = "";
+    private float currentContextPriority = 0f;
+    
+    // Component references
+    private AudioManager audioManager;
+    private ParticleEffectsManager particleManager;
+    private PostProcessingManager postProcessManager;
+    private Camera targetCamera;
+    
+    // Events
+    public System.Action&lt;string&gt; OnFeedbackTriggered;
+    public System.Action&lt;string&gt; OnContextChanged;
+    
+    // Singleton pattern
+    public static AudioVisualFeedbackManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        InitializeFeedbackSystem();
+    }
+    
+    void Start()
+    {
+        SetupComponentReferences();
+        SetupCamera();
+    }
+    
+    void Update()
+    {
+        if (isShaking)
+        {
+            UpdateScreenShake();
+        }
+        
+        CleanupFinishedCoroutines();
+    }
+    
+    void InitializeFeedbackSystem()
+    {
+        // Build effect lookup dictionary
+        foreach (FeedbackEffect effect in feedbackEffects)
+        {
+            effectLookup[effect.effectName] = effect;
+        }
+        
+        // Build context lookup dictionary
+        foreach (ContextualFeedback context in contextualFeedbacks)
+        {
+            contextLookup[context.contextName] = context;
+        }
+        
+        Debug.Log($"Audio-Visual Feedback Manager initialized with {feedbackEffects.Length} effects and {contextualFeedbacks.Length} contexts");
+    }
+    
+    void SetupComponentReferences()
+    {
+        // Get component managers
+        if (enableAudioIntegration)
+        {
+            audioManager = AudioManager.Instance;
+            if (audioManager == null)
+            {
+                Debug.LogWarning("AudioManager not found - audio feedback disabled");
+                enableAudioIntegration = false;
+            }
+        }
+        
+        if (enableParticleIntegration)
+        {
+            particleManager = ParticleEffectsManager.Instance;
+            if (particleManager == null)
+            {
+                Debug.LogWarning("ParticleEffectsManager not found - particle feedback disabled");
+                enableParticleIntegration = false;
+            }
+        }
+        
+        if (enablePostProcessIntegration)
+        {
+            postProcessManager = PostProcessingManager.Instance;
+            if (postProcessManager == null)
+            {
+                Debug.LogWarning("PostProcessingManager not found - post-process feedback disabled");
+                enablePostProcessIntegration = false;
+            }
+        }
+    }
+    
+    void SetupCamera()
+    {
+        if (cameraTransform == null)
+        {
+            targetCamera = Camera.main;
+            if (targetCamera != null)
+            {
+                cameraTransform = targetCamera.transform;
+            }
+        }
+        
+        if (cameraTransform != null)
+        {
+            originalCameraPosition = cameraTransform.localPosition;
+        }
+    }
+    
+    // Public API for triggering feedback
+    public void TriggerFeedback(string effectName, Vector3? position = null, Transform target = null, float intensityMultiplier = 1f)
+    {
+        if (!effectLookup.ContainsKey(effectName))
+        {
+            Debug.LogWarning($"Feedback effect '{effectName}' not found");
+            return;
+        }
+        
+        FeedbackEffect effect = effectLookup[effectName];
+        
+        // Check distance culling if position is provided
+        if (position.HasValue &amp;&amp; ShouldCullEffect(position.Value))
+        {
+            return;
+        }
+        
+        // Check concurrent effect limit
+        if (activeFeedbackCoroutines.Count &gt;= maxConcurrentEffects)
+        {
+            Debug.LogWarning("Maximum concurrent feedback effects reached");
+            return;
+        }
+        
+        // Start feedback coroutine
+        Coroutine feedbackCoroutine = StartCoroutine(ExecuteFeedbackEffect(effect, position, target, intensityMultiplier));
+        activeFeedbackCoroutines.Add(feedbackCoroutine);
+        
+        OnFeedbackTriggered?.Invoke(effectName);
+    }
+    
+    public void TriggerContextualFeedback(string contextName, Vector3? position = null, Transform target = null)
+    {
+        if (!contextLookup.ContainsKey(contextName))
+        {
+            Debug.LogWarning($"Contextual feedback '{contextName}' not found");
+            return;
+        }
+        
+        ContextualFeedback contextFeedback = contextLookup[contextName];
+        
+        // Check if we can interrupt current context
+        if (!string.IsNullOrEmpty(currentContext) &amp;&amp; !contextFeedback.allowInterruption &amp;&amp; contextFeedback.contextPriority &lt;= currentContextPriority)
+        {
+            return;
+        }
+        
+        // Set new context
+        currentContext = contextName;
+        currentContextPriority = contextFeedback.contextPriority;
+        OnContextChanged?.Invoke(contextName);
+        
+        // Trigger all effects in context
+        foreach (FeedbackEffect effect in contextFeedback.contextEffects)
+        {
+            TriggerFeedback(effect.effectName, position, target);
+        }
+    }
+    
+    public void SetContext(string contextName)
+    {
+        if (contextLookup.ContainsKey(contextName))
+        {
+            currentContext = contextName;
+            currentContextPriority = contextLookup[contextName].contextPriority;
+            OnContextChanged?.Invoke(contextName);
+        }
+    }
+    
+    public void ClearContext()
+    {
+        currentContext = "";
+        currentContextPriority = 0f;
+        OnContextChanged?.Invoke("");
+    }
+    
+    // Core feedback execution
+    IEnumerator ExecuteFeedbackEffect(FeedbackEffect effect, Vector3? position, Transform target, float intensityMultiplier)
+    {
+        // Initial delay
+        if (effect.delay &gt; 0f)
+        {
+            yield return new WaitForSeconds(effect.delay);
+        }
+        
+        Vector3 effectPosition = position ?? (target != null ? target.position : transform.position);
+        
+        // Execute all feedback components simultaneously
+        List&lt;Coroutine&gt; componentCoroutines = new List&lt;Coroutine&gt;();
+        
+        // Audio feedback
+        if (effect.playAudio &amp;&amp; enableAudioIntegration &amp;&amp; audioManager != null)
+        {
+            componentCoroutines.Add(StartCoroutine(ExecuteAudioFeedback(effect, effectPosition, target, intensityMultiplier)));
+        }
+        
+        // Particle feedback
+        if (effect.playParticles &amp;&amp; enableParticleIntegration &amp;&amp; particleManager != null)
+        {
+            componentCoroutines.Add(StartCoroutine(ExecuteParticleFeedback(effect, effectPosition, target, intensityMultiplier)));
+        }
+        
+        // Post-processing feedback
+        if (effect.usePostProcessing &amp;&amp; enablePostProcessIntegration &amp;&amp; postProcessManager != null)
+        {
+            componentCoroutines.Add(StartCoroutine(ExecutePostProcessFeedback(effect, intensityMultiplier)));
+        }
+        
+        // Screen shake feedback
+        if (effect.useScreenShake &amp;&amp; enableScreenShake)
+        {
+            componentCoroutines.Add(StartCoroutine(ExecuteScreenShakeFeedback(effect, intensityMultiplier)));
+        }
+        
+        // Wait for all components to complete or timeout
+        float elapsedTime = 0f;
+        while (elapsedTime &lt; effect.totalDuration &amp;&amp; AreCoroutinesRunning(componentCoroutines))
+        {
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        
+        // Stop any remaining coroutines
+        foreach (Coroutine coroutine in componentCoroutines)
+        {
+            if (coroutine != null)
+            {
+                StopCoroutine(coroutine);
+            }
+        }
+    }
+    
+    IEnumerator ExecuteAudioFeedback(FeedbackEffect effect, Vector3 position, Transform target, float intensityMultiplier)
+    {
+        if (string.IsNullOrEmpty(effect.audioClipName)) yield break;
+        
+        AudioSource audioSource = audioManager.PlaySound(effect.audioClipName, effect.audioIs3D ? position : (Vector3?)null, target);
+        
+        if (audioSource != null)
+        {
+            audioSource.volume = effect.audioVolume * intensityMultiplier;
+            audioSource.pitch = effect.audioPitch;
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator ExecuteParticleFeedback(FeedbackEffect effect, Vector3 position, Transform target, float intensityMultiplier)
+    {
+        if (string.IsNullOrEmpty(effect.particleEffectName)) yield break;
+        
+        Vector3 particlePosition = position + effect.particleOffset;
+        ParticleSystem particles = particleManager.PlayEffect(effect.particleEffectName, particlePosition, Quaternion.identity, target);
+        
+        if (particles != null)
+        {
+            // Scale particle effect
+            particles.transform.localScale = Vector3.one * (effect.particleScale * intensityMultiplier);
+            
+            // Modify emission based on intensity
+            var emission = particles.emission;
+            emission.rateOverTimeMultiplier *= intensityMultiplier;
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator ExecutePostProcessFeedback(FeedbackEffect effect, float intensityMultiplier)
+    {
+        if (string.IsNullOrEmpty(effect.postProcessEffect)) yield break;
+        
+        float targetIntensity = effect.postProcessIntensity * intensityMultiplier;
+        postProcessManager.SetEffectIntensity(effect.postProcessEffect, targetIntensity, effect.postProcessDuration * 0.1f);
+        
+        yield return new WaitForSeconds(effect.postProcessDuration * 0.8f);
+        
+        // Fade back to normal
+        postProcessManager.SetEffectIntensity(effect.postProcessEffect, 0f, effect.postProcessDuration * 0.2f);
+    }
+    
+    IEnumerator ExecuteScreenShakeFeedback(FeedbackEffect effect, float intensityMultiplier)
+    {
+        if (cameraTransform == null) yield break;
+        
+        float shakeIntensity = effect.shakeIntensity * intensityMultiplier;
+        float shakeDuration = effect.shakeDuration;
+        
+        AddScreenShake(shakeIntensity, shakeDuration);
+        
+        yield return new WaitForSeconds(shakeDuration);
+    }
+    
+    // Screen shake implementation
+    void AddScreenShake(float intensity, float duration)
+    {
+        currentShakeIntensity = Mathf.Max(currentShakeIntensity, intensity);
+        
+        if (!isShaking)
+        {
+            isShaking = true;
+            StartCoroutine(ScreenShakeCoroutine(duration));
+        }
+    }
+    
+    IEnumerator ScreenShakeCoroutine(float duration)
+    {
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; duration || currentShakeIntensity &gt; 0.01f)
+        {
+            elapsedTime += Time.deltaTime;
+            
+            // Decay shake intensity over time
+            currentShakeIntensity = Mathf.Lerp(currentShakeIntensity, 0f, shakeDecay * Time.deltaTime);
+            
+            yield return null;
+        }
+        
+        isShaking = false;
+        currentShakeIntensity = 0f;
+        
+        // Return camera to original position
+        cameraTransform.localPosition = originalCameraPosition;
+    }
+    
+    void UpdateScreenShake()
+    {
+        if (cameraTransform == null) return;
+        
+        Vector3 shakeOffset = Vector3.zero;
+        
+        if (currentShakeIntensity &gt; 0f)
+        {
+            shakeOffset = Random.insideUnitSphere * currentShakeIntensity * shakeMaxDistance;
+            shakeOffset.z = 0f; // Keep camera on same Z plane
+        }
+        
+        cameraTransform.localPosition = originalCameraPosition + shakeOffset;
+    }
+    
+    // Utility methods
+    bool ShouldCullEffect(Vector3 position)
+    {
+        if (targetCamera == null) return false;
+        
+        float distance = Vector3.Distance(position, targetCamera.transform.position);
+        return distance &gt; effectCullingDistance;
+    }
+    
+    bool AreCoroutinesRunning(List&lt;Coroutine&gt; coroutines)
+    {
+        foreach (Coroutine coroutine in coroutines)
+        {
+            if (coroutine != null)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    void CleanupFinishedCoroutines()
+    {
+        for (int i = activeFeedbackCoroutines.Count - 1; i &gt;= 0; i--)
+        {
+            if (activeFeedbackCoroutines[i] == null)
+            {
+                activeFeedbackCoroutines.RemoveAt(i);
+            }
+        }
+    }
+    
+    // Public utility methods
+    public void StopAllFeedback()
+    {
+        foreach (Coroutine coroutine in activeFeedbackCoroutines)
+        {
+            if (coroutine != null)
+            {
+                StopCoroutine(coroutine);
+            }
+        }
+        
+        activeFeedbackCoroutines.Clear();
+        
+        // Stop screen shake
+        if (isShaking)
+        {
+            StopCoroutine("ScreenShakeCoroutine");
+            isShaking = false;
+            currentShakeIntensity = 0f;
+            
+            if (cameraTransform != null)
+            {
+                cameraTransform.localPosition = originalCameraPosition;
+            }
+        }
+    }
+    
+    public bool IsEffectActive(string effectName)
+    {
+        return activeFeedbackCoroutines.Count &gt; 0; // Simplified check
+    }
+    
+    public int GetActiveFeedbackCount()
+    {
+        return activeFeedbackCoroutines.Count;
+    }
+    
+    // Debug methods
+    public void LogFeedbackSystemStats()
+    {
+        Debug.Log("=== Audio-Visual Feedback Stats ===");
+        Debug.Log($"Active Feedback Effects: {activeFeedbackCoroutines.Count}/{maxConcurrentEffects}");
+        Debug.Log($"Current Context: {currentContext} (Priority: {currentContextPriority})");
+        Debug.Log($"Screen Shake Active: {isShaking} (Intensity: {currentShakeIntensity:F3})");
+        Debug.Log($"Integration Status:");
+        Debug.Log($"  Audio: {enableAudioIntegration &amp;&amp; audioManager != null}");
+        Debug.Log($"  Particles: {enableParticleIntegration &amp;&amp; particleManager != null}");
+        Debug.Log($"  Post-Process: {enablePostProcessIntegration &amp;&amp; postProcessManager != null}");
+        Debug.Log($"  Screen Shake: {enableScreenShake}");
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Key Takeaways</h2>
+                
+                <p>Unity's audio and visual effects systems provide the tools to create rich, immersive player experiences. By understanding spatial audio, adaptive music systems, particle effects, and post-processing techniques, you can craft games that feel polished and engaging.</p>
+
+                <div class="info-box">
+                    <h4>Audio-Visual Development Checklist</h4>
+                    <ul>
+                        <li>Implement audio source pooling to prevent performance spikes from frequent audio playback</li>
+                        <li>Use AudioMixers for dynamic mixing and real-time audio processing</li>
+                        <li>Design particle systems with LOD and culling to maintain performance</li>
+                        <li>Create modular post-processing profiles that can adapt to gameplay situations</li>
+                        <li>Integrate audio, particles, and visual effects into cohesive feedback systems</li>
+                        <li>Profile audio and visual effects performance across target platforms</li>
+                        <li>Design effects that scale appropriately with game settings and hardware capabilities</li>
+                    </ul>
+                </div>
+
+                <p>The audio and visual systems work most effectively when they complement other game systems like gameplay mechanics, UI feedback, and narrative elements. In the next chapter, we'll explore Unity's Scene Management system and learn how to create smooth transitions and manage complex game states.</p>
+            </section>
+
+            <div class="chapter-nav">
+                <a href="chapter07.html" class="nav-button prev">← Previous: UI & Canvas System</a>
+                <a href="chapter09.html" class="nav-button next">Next: Scene Management →</a>
+            </div>
+        </article>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

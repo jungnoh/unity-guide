@@ -1,0 +1,3086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 9: Scene Management and Game Flow - Unity Game Development Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">Chapter 9</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html">📚 Introduction</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html">Ch 3: GameObjects & Components</a></li>
+            <li><a href="chapter04.html">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html">Ch 6: Physics & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html" class="active">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+        <article class="chapter">
+            <header class="chapter-header">
+                <div class="chapter-number">Chapter 9</div>
+                <h1>Scene Management and Game Flow</h1>
+                <p class="chapter-description">Master Unity's Scene Management system to create seamless transitions, persistent data, and complex game state management</p>
+            </header>
+
+            <section class="learning-objectives">
+                <h2>What You'll Learn</h2>
+                <ul>
+                    <li>Unity's Scene Management API and async loading patterns</li>
+                    <li>Persistent data management across scene transitions</li>
+                    <li>Game state machines and flow control</li>
+                    <li>Loading screens and progress management</li>
+                    <li>Memory management and optimization for large games</li>
+                    <li>Save/load systems and data persistence</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Understanding Unity's Scene Architecture</h2>
+                
+                <p>Unity's Scene Management system operates like a container orchestration platform such as Kubernetes. Each scene represents a discrete environment (like a pod or container) that contains GameObjects, lighting, and other assets. The SceneManager acts as the orchestrator, handling scene loading, unloading, and transitions while maintaining application state.</p>
+
+                <p>Unlike web applications where you might have a single-page application with dynamic content, Unity games typically consist of multiple scenes that represent different game areas, menus, or gameplay states. This architectural pattern allows for better memory management, asset organization, and content loading strategies.</p>
+
+                <div class="info-box">
+                    <h4>DevOps Perspective: Scenes as Microservices</h4>
+                    <p>Think of Unity scenes like microservices in a distributed system. Each scene encapsulates specific functionality (main menu, level 1, settings), can be loaded/unloaded independently, and communicates with other scenes through well-defined interfaces. This modular approach enables better development team collaboration and easier content management.</p>
+                </div>
+
+                <h3>Scene Manager and Async Loading</h3>
+
+                <div class="code-example">
+                    <h4>Advanced Scene Management System</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+[System.Serializable]
+public class SceneReference
+{
+    public string sceneName;
+    public string displayName;
+    public string description;
+    public SceneType sceneType;
+    public LoadSceneMode loadMode = LoadSceneMode.Single;
+    public bool preloadAssets = false;
+    public float estimatedLoadTime = 5f;
+    public string[] dependencies; // Other scenes this scene depends on
+}
+
+public enum SceneType
+{
+    MainMenu,
+    Gameplay,
+    UI,
+    Loading,
+    Settings,
+    Cutscene
+}
+
+public enum LoadingState
+{
+    Idle,
+    Loading,
+    Unloading,
+    Transitioning,
+    Error
+}
+
+public class SceneManager : MonoBehaviour
+{
+    [Header("Scene Configuration")]
+    public SceneReference[] gameScenes;
+    public string initialSceneName = "MainMenu";
+    public bool allowSceneStacking = true;
+    public int maxConcurrentLoads = 2;
+    
+    [Header("Loading Settings")]
+    public bool useAsyncLoading = true;
+    public bool activateOnLoad = true;
+    public float loadingUpdateInterval = 0.1f;
+    public float minimumLoadingTime = 1f; // Prevent flashing on fast loads
+    
+    [Header("Memory Management")]
+    public bool unloadUnusedAssets = true;
+    public bool forceGarbageCollection = true;
+    public float memoryCheckInterval = 5f;
+    
+    [Header("Debugging")]
+    public bool logSceneOperations = true;
+    public bool showLoadingProgress = true;
+    
+    // Scene state management
+    private Dictionary&lt;string, SceneReference&gt; sceneReferences = new Dictionary&lt;string, SceneReference&gt;();
+    private Dictionary&lt;string, AsyncOperation&gt; activeLoadOperations = new Dictionary&lt;string, AsyncOperation&gt;();
+    private List&lt;string&gt; loadedScenes = new List&lt;string&gt;();
+    
+    private LoadingState currentState = LoadingState.Idle;
+    private string currentlyLoadingScene = "";
+    private float currentLoadProgress = 0f;
+    
+    // Memory management
+    private float lastMemoryCheck = 0f;
+    private long lastMemoryUsage = 0L;
+    
+    // Events
+    public System.Action&lt;string&gt; OnSceneLoadStarted;
+    public System.Action&lt;string, float&gt; OnSceneLoadProgress;
+    public System.Action&lt;string&gt; OnSceneLoadCompleted;
+    public System.Action&lt;string&gt; OnSceneUnloadStarted;
+    public System.Action&lt;string&gt; OnSceneUnloadCompleted;
+    public System.Action&lt;LoadingState&gt; OnLoadingStateChanged;
+    public System.Action&lt;string&gt; OnSceneTransitionCompleted;
+    
+    // Singleton pattern
+    public static SceneManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            InitializeSceneManager();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    
+    void Start()
+    {
+        LoadInitialScene();
+    }
+    
+    void Update()
+    {
+        UpdateLoadingOperations();
+        
+        if (Time.time - lastMemoryCheck &gt; memoryCheckInterval)
+        {
+            CheckMemoryUsage();
+            lastMemoryCheck = Time.time;
+        }
+    }
+    
+    void InitializeSceneManager()
+    {
+        // Build scene reference lookup
+        foreach (SceneReference sceneRef in gameScenes)
+        {
+            sceneReferences[sceneRef.sceneName] = sceneRef;
+        }
+        
+        // Register for scene management events
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+        UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+        
+        if (logSceneOperations)
+        {
+            Debug.Log($"Scene Manager initialized with {gameScenes.Length} scene references");
+        }
+    }
+    
+    void LoadInitialScene()
+    {
+        if (!string.IsNullOrEmpty(initialSceneName) &amp;&amp; sceneReferences.ContainsKey(initialSceneName))
+        {
+            LoadScene(initialSceneName);
+        }
+    }
+    
+    // Public API for scene loading
+    public void LoadScene(string sceneName, bool showLoadingScreen = true)
+    {
+        if (!sceneReferences.ContainsKey(sceneName))
+        {
+            Debug.LogError($"Scene '{sceneName}' not found in scene references");
+            return;
+        }
+        
+        if (currentState == LoadingState.Loading || currentState == LoadingState.Transitioning)
+        {
+            Debug.LogWarning($"Scene loading already in progress. Current: {currentlyLoadingScene}");
+            return;
+        }
+        
+        SceneReference sceneRef = sceneReferences[sceneName];
+        StartCoroutine(LoadSceneAsync(sceneRef, showLoadingScreen));
+    }
+    
+    public void LoadSceneAdditive(string sceneName)
+    {
+        if (!sceneReferences.ContainsKey(sceneName))
+        {
+            Debug.LogError($"Scene '{sceneName}' not found in scene references");
+            return;
+        }
+        
+        if (loadedScenes.Contains(sceneName))
+        {
+            Debug.LogWarning($"Scene '{sceneName}' is already loaded");
+            return;
+        }
+        
+        SceneReference sceneRef = sceneReferences[sceneName];
+        sceneRef.loadMode = LoadSceneMode.Additive;
+        
+        StartCoroutine(LoadSceneAsync(sceneRef, false));
+    }
+    
+    public void UnloadScene(string sceneName)
+    {
+        if (!loadedScenes.Contains(sceneName))
+        {
+            Debug.LogWarning($"Scene '{sceneName}' is not currently loaded");
+            return;
+        }
+        
+        StartCoroutine(UnloadSceneAsync(sceneName));
+    }
+    
+    public void TransitionToScene(string sceneName, string transitionEffect = null)
+    {
+        StartCoroutine(SceneTransitionCoroutine(sceneName, transitionEffect));
+    }
+    
+    // Core loading implementation
+    IEnumerator LoadSceneAsync(SceneReference sceneRef, bool showLoadingScreen)
+    {
+        SetLoadingState(LoadingState.Loading);
+        currentlyLoadingScene = sceneRef.sceneName;
+        OnSceneLoadStarted?.Invoke(sceneRef.sceneName);
+        
+        float loadStartTime = Time.realtimeSinceStartup;
+        
+        // Show loading screen if requested
+        if (showLoadingScreen)
+        {
+            yield return StartCoroutine(ShowLoadingScreen(sceneRef));
+        }
+        
+        // Check and load dependencies first
+        yield return StartCoroutine(LoadSceneDependencies(sceneRef));
+        
+        // Start async scene loading
+        AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneRef.sceneName, sceneRef.loadMode);
+        
+        if (asyncLoad == null)
+        {
+            Debug.LogError($"Failed to start async loading for scene '{sceneRef.sceneName}'");
+            SetLoadingState(LoadingState.Error);
+            yield break;
+        }
+        
+        // Prevent scene activation until we're ready
+        asyncLoad.allowSceneActivation = false;
+        activeLoadOperations[sceneRef.sceneName] = asyncLoad;
+        
+        // Wait for loading to complete (90%)
+        while (!asyncLoad.isDone &amp;&amp; asyncLoad.progress &lt; 0.9f)
+        {
+            currentLoadProgress = asyncLoad.progress;
+            OnSceneLoadProgress?.Invoke(sceneRef.sceneName, currentLoadProgress);
+            
+            if (logSceneOperations)
+            {
+                Debug.Log($"Loading {sceneRef.sceneName}: {currentLoadProgress:P1}");
+            }
+            
+            yield return new WaitForSeconds(loadingUpdateInterval);
+        }
+        
+        // Preload assets if configured
+        if (sceneRef.preloadAssets)
+        {
+            yield return StartCoroutine(PreloadSceneAssets(sceneRef));
+        }
+        
+        // Ensure minimum loading time for UX
+        float elapsedTime = Time.realtimeSinceStartup - loadStartTime;
+        if (elapsedTime &lt; minimumLoadingTime)
+        {
+            yield return new WaitForSeconds(minimumLoadingTime - elapsedTime);
+        }
+        
+        // Activate the scene
+        if (activateOnLoad)
+        {
+            asyncLoad.allowSceneActivation = true;
+            
+            // Wait for activation to complete
+            while (!asyncLoad.isDone)
+            {
+                yield return null;
+            }
+        }
+        
+        // Clean up and notify
+        activeLoadOperations.Remove(sceneRef.sceneName);
+        
+        if (!loadedScenes.Contains(sceneRef.sceneName))
+        {
+            loadedScenes.Add(sceneRef.sceneName);
+        }
+        
+        currentLoadProgress = 1f;
+        OnSceneLoadProgress?.Invoke(sceneRef.sceneName, 1f);
+        OnSceneLoadCompleted?.Invoke(sceneRef.sceneName);
+        
+        SetLoadingState(LoadingState.Idle);
+        currentlyLoadingScene = "";
+        
+        // Cleanup memory if configured
+        if (unloadUnusedAssets)
+        {
+            yield return Resources.UnloadUnusedAssets();
+        }
+        
+        if (forceGarbageCollection)
+        {
+            System.GC.Collect();
+        }
+        
+        if (logSceneOperations)
+        {
+            Debug.Log($"Scene '{sceneRef.sceneName}' loaded successfully in {Time.realtimeSinceStartup - loadStartTime:F2} seconds");
+        }
+    }
+    
+    IEnumerator UnloadSceneAsync(string sceneName)
+    {
+        SetLoadingState(LoadingState.Unloading);
+        OnSceneUnloadStarted?.Invoke(sceneName);
+        
+        AsyncOperation asyncUnload = UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(sceneName);
+        
+        if (asyncUnload == null)
+        {
+            Debug.LogError($"Failed to start async unloading for scene '{sceneName}'");
+            SetLoadingState(LoadingState.Error);
+            yield break;
+        }
+        
+        while (!asyncUnload.isDone)
+        {
+            yield return null;
+        }
+        
+        loadedScenes.Remove(sceneName);
+        OnSceneUnloadCompleted?.Invoke(sceneName);
+        SetLoadingState(LoadingState.Idle);
+        
+        if (logSceneOperations)
+        {
+            Debug.Log($"Scene '{sceneName}' unloaded successfully");
+        }
+        
+        // Clean up memory after unloading
+        if (unloadUnusedAssets)
+        {
+            yield return Resources.UnloadUnusedAssets();
+        }
+        
+        if (forceGarbageCollection)
+        {
+            System.GC.Collect();
+        }
+    }
+    
+    IEnumerator SceneTransitionCoroutine(string sceneName, string transitionEffect)
+    {
+        SetLoadingState(LoadingState.Transitioning);
+        
+        // Play transition effect if specified
+        if (!string.IsNullOrEmpty(transitionEffect))
+        {
+            yield return StartCoroutine(PlayTransitionEffect(transitionEffect, true));
+        }
+        
+        // Load the new scene
+        yield return StartCoroutine(LoadSceneAsync(sceneReferences[sceneName], false));
+        
+        // Play transition out effect
+        if (!string.IsNullOrEmpty(transitionEffect))
+        {
+            yield return StartCoroutine(PlayTransitionEffect(transitionEffect, false));
+        }
+        
+        OnSceneTransitionCompleted?.Invoke(sceneName);
+        SetLoadingState(LoadingState.Idle);
+    }
+    
+    IEnumerator LoadSceneDependencies(SceneReference sceneRef)
+    {
+        if (sceneRef.dependencies == null || sceneRef.dependencies.Length == 0)
+        {
+            yield break;
+        }
+        
+        foreach (string dependency in sceneRef.dependencies)
+        {
+            if (!loadedScenes.Contains(dependency) &amp;&amp; sceneReferences.ContainsKey(dependency))
+            {
+                if (logSceneOperations)
+                {
+                    Debug.Log($"Loading dependency scene: {dependency}");
+                }
+                
+                SceneReference dependencyRef = sceneReferences[dependency];
+                dependencyRef.loadMode = LoadSceneMode.Additive;
+                
+                yield return StartCoroutine(LoadSceneAsync(dependencyRef, false));
+            }
+        }
+    }
+    
+    IEnumerator PreloadSceneAssets(SceneReference sceneRef)
+    {
+        if (logSceneOperations)
+        {
+            Debug.Log($"Preloading assets for scene: {sceneRef.sceneName}");
+        }
+        
+        // This is where you would implement specific asset preloading
+        // For example, loading textures, audio clips, etc.
+        
+        yield return new WaitForSeconds(0.5f); // Simulate preloading time
+    }
+    
+    IEnumerator ShowLoadingScreen(SceneReference sceneRef)
+    {
+        // Find loading screen scene
+        SceneReference loadingScreen = null;
+        foreach (SceneReference scene in gameScenes)
+        {
+            if (scene.sceneType == SceneType.Loading)
+            {
+                loadingScreen = scene;
+                break;
+            }
+        }
+        
+        if (loadingScreen != null)
+        {
+            // Load loading screen additively
+            AsyncOperation loadingScreenLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(loadingScreen.sceneName, LoadSceneMode.Additive);
+            yield return loadingScreenLoad;
+            
+            // Set as active scene temporarily
+            Scene loadingSceneObj = UnityEngine.SceneManagement.SceneManager.GetSceneByName(loadingScreen.sceneName);
+            UnityEngine.SceneManagement.SceneManager.SetActiveScene(loadingSceneObj);
+        }
+    }
+    
+    IEnumerator PlayTransitionEffect(string effectName, bool transitionIn)
+    {
+        // Implement transition effects here (fade, slide, etc.)
+        // This would typically interface with your UI animation system
+        
+        if (logSceneOperations)
+        {
+            Debug.Log($"Playing transition effect: {effectName} ({'in' if transitionIn else 'out'})");
+        }
+        
+        yield return new WaitForSeconds(0.5f); // Simulate transition time
+    }
+    
+    // Update and monitoring
+    void UpdateLoadingOperations()
+    {
+        if (currentState == LoadingState.Loading &amp;&amp; showLoadingProgress)
+        {
+            // Update loading progress for active operations
+            foreach (var loadOp in activeLoadOperations)
+            {
+                if (loadOp.Value != null)
+                {
+                    OnSceneLoadProgress?.Invoke(loadOp.Key, loadOp.Value.progress);
+                }
+            }
+        }
+    }
+    
+    void CheckMemoryUsage()
+    {
+        long currentMemory = System.GC.GetTotalMemory(false);
+        
+        if (logSceneOperations &amp;&amp; currentMemory != lastMemoryUsage)
+        {
+            float memoryMB = currentMemory / (1024f * 1024f);
+            Debug.Log($"Memory Usage: {memoryMB:F1} MB ({(currentMemory &gt; lastMemoryUsage ? "+" : "")}{(currentMemory - lastMemoryUsage) / (1024f * 1024f):F1} MB)");
+        }
+        
+        lastMemoryUsage = currentMemory;
+        
+        // Trigger garbage collection if memory usage is high
+        if (currentMemory &gt; 500 * 1024 * 1024) // 500 MB threshold
+        {
+            if (logSceneOperations)
+            {
+                Debug.Log("High memory usage detected - triggering garbage collection");
+            }
+            
+            System.GC.Collect();
+        }
+    }
+    
+    // Event handlers
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (logSceneOperations)
+        {
+            Debug.Log($"Scene loaded event: {scene.name} ({mode})");
+        }
+    }
+    
+    void OnSceneUnloaded(Scene scene)
+    {
+        if (logSceneOperations)
+        {
+            Debug.Log($"Scene unloaded event: {scene.name}");
+        }
+    }
+    
+    // State management
+    void SetLoadingState(LoadingState newState)
+    {
+        if (currentState != newState)
+        {
+            LoadingState previousState = currentState;
+            currentState = newState;
+            
+            OnLoadingStateChanged?.Invoke(newState);
+            
+            if (logSceneOperations)
+            {
+                Debug.Log($"Loading state changed: {previousState} → {newState}");
+            }
+        }
+    }
+    
+    // Public query methods
+    public bool IsSceneLoaded(string sceneName)
+    {
+        return loadedScenes.Contains(sceneName);
+    }
+    
+    public LoadingState GetLoadingState()
+    {
+        return currentState;
+    }
+    
+    public float GetLoadingProgress()
+    {
+        return currentLoadProgress;
+    }
+    
+    public string GetCurrentlyLoadingScene()
+    {
+        return currentlyLoadingScene;
+    }
+    
+    public List&lt;string&gt; GetLoadedScenes()
+    {
+        return new List&lt;string&gt;(loadedScenes);
+    }
+    
+    public SceneReference GetSceneReference(string sceneName)
+    {
+        return sceneReferences.ContainsKey(sceneName) ? sceneReferences[sceneName] : null;
+    }
+    
+    // Utility methods
+    public void ReloadCurrentScene()
+    {
+        Scene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        LoadScene(activeScene.name);
+    }
+    
+    public void LoadSceneByType(SceneType sceneType)
+    {
+        foreach (SceneReference sceneRef in gameScenes)
+        {
+            if (sceneRef.sceneType == sceneType)
+            {
+                LoadScene(sceneRef.sceneName);
+                return;
+            }
+        }
+        
+        Debug.LogWarning($"No scene found with type: {sceneType}");
+    }
+    
+    public void UnloadAllScenesExcept(string exceptSceneName)
+    {
+        List&lt;string&gt; scenesToUnload = new List&lt;string&gt;();
+        
+        foreach (string sceneName in loadedScenes)
+        {
+            if (sceneName != exceptSceneName)
+            {
+                scenesToUnload.Add(sceneName);
+            }
+        }
+        
+        foreach (string sceneName in scenesToUnload)
+        {
+            UnloadScene(sceneName);
+        }
+    }
+    
+    // Debug methods
+    public void LogSceneManagerStatus()
+    {
+        Debug.Log("=== Scene Manager Status ===");
+        Debug.Log($"Current State: {currentState}");
+        Debug.Log($"Currently Loading: {currentlyLoadingScene}");
+        Debug.Log($"Load Progress: {currentLoadProgress:P1}");
+        Debug.Log($"Loaded Scenes: {string.Join(", ", loadedScenes)}");
+        Debug.Log($"Active Operations: {activeLoadOperations.Count}");
+        Debug.Log($"Memory Usage: {System.GC.GetTotalMemory(false) / (1024f * 1024f):F1} MB");
+    }
+    
+    void OnDestroy()
+    {
+        // Unregister events
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+        UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Game State Management</h2>
+                
+                <p>Game state management in Unity requires a systematic approach similar to state machines in distributed systems. Think of game states like application states in a microservice—each state has defined entry conditions, behaviors, and exit criteria. This pattern helps manage complex game flow, UI states, and player progression.</p>
+
+                <h3>Finite State Machine for Game Flow</h3>
+
+                <div class="code-example">
+                    <h4>Comprehensive Game State Manager</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+using System.Collections;
+
+public enum GameState
+{
+    Initializing,
+    MainMenu,
+    Loading,
+    Playing,
+    Paused,
+    GameOver,
+    Victory,
+    Settings,
+    Credits,
+    Transitioning
+}
+
+[System.Serializable]
+public class GameStateConfig
+{
+    public GameState state;
+    public string displayName;
+    public bool allowsPausing = true;
+    public bool allowsInput = true;
+    public bool pausesTime = false;
+    public float timeScale = 1f;
+    public string associatedScene;
+    public AudioClip backgroundMusic;
+    public GameState[] validTransitions;
+}
+
+[System.Serializable]
+public class StateTransition
+{
+    public GameState fromState;
+    public GameState toState;
+    public string transitionName;
+    public float transitionDuration = 0.5f;
+    public bool requiresConfirmation = false;
+    public string confirmationMessage = "";
+    public System.Action preTransitionAction;
+    public System.Action postTransitionAction;
+}
+
+public class GameStateManager : MonoBehaviour
+{
+    [Header("State Configuration")]
+    public GameStateConfig[] gameStates;
+    public GameState initialState = GameState.Initializing;
+    public bool logStateChanges = true;
+    
+    [Header("Transition Settings")]
+    public float defaultTransitionDuration = 0.5f;
+    public bool allowForcedTransitions = false;
+    public bool validateTransitions = true;
+    
+    [Header("Persistence")]
+    public bool saveStateOnChange = true;
+    public string statePrefsKey = "GameState";
+    
+    // State management
+    private GameState currentState;
+    private GameState previousState;
+    private GameStateConfig currentStateConfig;
+    private float stateEnterTime;
+    private bool isTransitioning = false;
+    
+    // State lookup
+    private Dictionary&lt;GameState, GameStateConfig&gt; stateConfigs = new Dictionary&lt;GameState, GameStateConfig&gt;();
+    private Dictionary&lt;string, StateTransition&gt; transitions = new Dictionary&lt;string, StateTransition&gt;();
+    
+    // State history for debugging and rollback
+    private List&lt;GameState&gt; stateHistory = new List&lt;GameState&gt;();
+    private const int maxHistorySize = 20;
+    
+    // Component references
+    private SceneManager sceneManager;
+    private AudioManager audioManager;
+    private UIManager uiManager;
+    
+    // Events
+    public System.Action&lt;GameState, GameState&gt; OnStateChanged;
+    public System.Action&lt;GameState&gt; OnStateEntered;
+    public System.Action&lt;GameState&gt; OnStateExited;
+    public System.Action&lt;GameState, float&gt; OnStateUpdate;
+    public System.Action OnTransitionStarted;
+    public System.Action OnTransitionCompleted;
+    
+    // Singleton pattern
+    public static GameStateManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            InitializeStateManager();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    
+    void Start()
+    {
+        SetupComponentReferences();
+        SetInitialState();
+    }
+    
+    void Update()
+    {
+        if (!isTransitioning)
+        {
+            UpdateCurrentState();
+        }
+        
+        HandleDebugInput();
+    }
+    
+    void InitializeStateManager()
+    {
+        // Build state configuration lookup
+        foreach (GameStateConfig config in gameStates)
+        {
+            stateConfigs[config.state] = config;
+        }
+        
+        if (logStateChanges)
+        {
+            Debug.Log($"Game State Manager initialized with {gameStates.Length} states");
+        }
+    }
+    
+    void SetupComponentReferences()
+    {
+        sceneManager = SceneManager.Instance;
+        audioManager = AudioManager.Instance;
+        uiManager = UIManager.Instance;
+    }
+    
+    void SetInitialState()
+    {
+        // Check for saved state
+        if (saveStateOnChange &amp;&amp; PlayerPrefs.HasKey(statePrefsKey))
+        {
+            int savedStateInt = PlayerPrefs.GetInt(statePrefsKey, (int)initialState);
+            GameState savedState = (GameState)savedStateInt;
+            
+            if (IsValidState(savedState))
+            {
+                ChangeState(savedState, false);
+                return;
+            }
+        }
+        
+        // Use initial state
+        ChangeState(initialState, false);
+    }
+    
+    // Public API for state management
+    public bool ChangeState(GameState newState, bool validateTransition = true)
+    {
+        if (newState == currentState)
+        {
+            Debug.LogWarning($"Already in state: {newState}");
+            return false;
+        }
+        
+        if (isTransitioning &amp;&amp; !allowForcedTransitions)
+        {
+            Debug.LogWarning($"Cannot change state during transition. Current: {currentState}, Requested: {newState}");
+            return false;
+        }
+        
+        if (validateTransition &amp;&amp; validateTransitions &amp;&amp; !IsValidTransition(currentState, newState))
+        {
+            Debug.LogWarning($"Invalid state transition: {currentState} → {newState}");
+            return false;
+        }
+        
+        StartCoroutine(StateTransitionCoroutine(newState));
+        return true;
+    }
+    
+    public bool TryChangeState(GameState newState)
+    {
+        return ChangeState(newState, true);
+    }
+    
+    public void ForceChangeState(GameState newState)
+    {
+        if (isTransitioning)
+        {
+            StopAllCoroutines();
+            isTransitioning = false;
+        }
+        
+        ChangeState(newState, false);
+    }
+    
+    public void GoToPreviousState()
+    {
+        if (previousState != currentState &amp;&amp; previousState != GameState.Transitioning)
+        {
+            ChangeState(previousState);
+        }
+    }
+    
+    public void PauseGame()
+    {
+        if (currentStateConfig != null &amp;&amp; currentStateConfig.allowsPausing)
+        {
+            ChangeState(GameState.Paused);
+        }
+    }
+    
+    public void ResumeGame()
+    {
+        if (currentState == GameState.Paused)
+        {
+            GoToPreviousState();
+        }
+    }
+    
+    public void RestartGame()
+    {
+        ChangeState(GameState.Loading);
+        // Additional restart logic would go here
+    }
+    
+    public void ExitToMainMenu()
+    {
+        ChangeState(GameState.MainMenu);
+    }
+    
+    // State transition implementation
+    IEnumerator StateTransitionCoroutine(GameState newState)
+    {
+        isTransitioning = true;
+        OnTransitionStarted?.Invoke();
+        
+        GameState oldState = currentState;
+        GameStateConfig oldConfig = currentStateConfig;
+        GameStateConfig newConfig = stateConfigs.ContainsKey(newState) ? stateConfigs[newState] : null;
+        
+        if (logStateChanges)
+        {
+            Debug.Log($"State transition: {oldState} → {newState}");
+        }
+        
+        // Exit current state
+        if (oldConfig != null)
+        {
+            yield return StartCoroutine(ExitState(oldState, oldConfig));
+        }
+        
+        // Update state variables
+        previousState = currentState;
+        currentState = newState;
+        currentStateConfig = newConfig;
+        stateEnterTime = Time.time;
+        
+        // Add to history
+        AddToStateHistory(newState);
+        
+        // Save state if configured
+        if (saveStateOnChange)
+        {
+            PlayerPrefs.SetInt(statePrefsKey, (int)newState);
+            PlayerPrefs.Save();
+        }
+        
+        // Enter new state
+        if (newConfig != null)
+        {
+            yield return StartCoroutine(EnterState(newState, newConfig));
+        }
+        
+        // Fire events
+        OnStateChanged?.Invoke(oldState, newState);
+        OnStateEntered?.Invoke(newState);
+        
+        isTransitioning = false;
+        OnTransitionCompleted?.Invoke();
+        
+        if (logStateChanges)
+        {
+            Debug.Log($"State transition completed: {newState}");
+        }
+    }
+    
+    IEnumerator ExitState(GameState state, GameStateConfig config)
+    {
+        OnStateExited?.Invoke(state);
+        
+        // State-specific exit logic
+        switch (state)
+        {
+            case GameState.Playing:
+                yield return ExitPlayingState();
+                break;
+            case GameState.Paused:
+                yield return ExitPausedState();
+                break;
+            case GameState.MainMenu:
+                yield return ExitMainMenuState();
+                break;
+            case GameState.Settings:
+                yield return ExitSettingsState();
+                break;
+        }
+        
+        // General cleanup
+        if (config.pausesTime)
+        {
+            Time.timeScale = 1f;
+        }
+    }
+    
+    IEnumerator EnterState(GameState state, GameStateConfig config)
+    {
+        // Apply state configuration
+        if (config.pausesTime)
+        {
+            Time.timeScale = 0f;
+        }
+        else
+        {
+            Time.timeScale = config.timeScale;
+        }
+        
+        // Load associated scene if specified
+        if (!string.IsNullOrEmpty(config.associatedScene) &amp;&amp; sceneManager != null)
+        {
+            if (!sceneManager.IsSceneLoaded(config.associatedScene))
+            {
+                sceneManager.LoadScene(config.associatedScene);
+                
+                // Wait for scene to load
+                while (sceneManager.GetLoadingState() == LoadingState.Loading)
+                {
+                    yield return null;
+                }
+            }
+        }
+        
+        // Play background music if specified
+        if (config.backgroundMusic != null &amp;&amp; audioManager != null)
+        {
+            // This would require a method in AudioManager to play background music
+            // audioManager.PlayBackgroundMusic(config.backgroundMusic);
+        }
+        
+        // State-specific enter logic
+        switch (state)
+        {
+            case GameState.Initializing:
+                yield return EnterInitializingState();
+                break;
+            case GameState.MainMenu:
+                yield return EnterMainMenuState();
+                break;
+            case GameState.Loading:
+                yield return EnterLoadingState();
+                break;
+            case GameState.Playing:
+                yield return EnterPlayingState();
+                break;
+            case GameState.Paused:
+                yield return EnterPausedState();
+                break;
+            case GameState.GameOver:
+                yield return EnterGameOverState();
+                break;
+            case GameState.Victory:
+                yield return EnterVictoryState();
+                break;
+            case GameState.Settings:
+                yield return EnterSettingsState();
+                break;
+            case GameState.Credits:
+                yield return EnterCreditsState();
+                break;
+        }
+    }
+    
+    // State-specific implementations
+    IEnumerator EnterInitializingState()
+    {
+        if (logStateChanges) Debug.Log("Entering Initializing state");
+        
+        // Initialize core systems
+        yield return new WaitForSeconds(0.1f);
+        
+        // Check for save data, initialize systems, etc.
+        yield return new WaitForSeconds(0.5f);
+        
+        // Transition to main menu when initialization is complete
+        ChangeState(GameState.MainMenu);
+    }
+    
+    IEnumerator EnterMainMenuState()
+    {
+        if (logStateChanges) Debug.Log("Entering Main Menu state");
+        
+        // Show main menu UI
+        if (uiManager != null)
+        {
+            uiManager.ShowMainMenu();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator ExitMainMenuState()
+    {
+        if (logStateChanges) Debug.Log("Exiting Main Menu state");
+        
+        // Hide main menu UI
+        if (uiManager != null)
+        {
+            uiManager.HideMainMenu();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator EnterLoadingState()
+    {
+        if (logStateChanges) Debug.Log("Entering Loading state");
+        
+        // Show loading screen
+        if (uiManager != null)
+        {
+            uiManager.ShowLoadingScreen();
+        }
+        
+        // Simulate or perform actual loading
+        yield return new WaitForSeconds(1f);
+        
+        // Transition to gameplay when loading is complete
+        ChangeState(GameState.Playing);
+    }
+    
+    IEnumerator EnterPlayingState()
+    {
+        if (logStateChanges) Debug.Log("Entering Playing state");
+        
+        // Hide loading screen, show game UI
+        if (uiManager != null)
+        {
+            uiManager.HideLoadingScreen();
+            uiManager.ShowGameplayUI();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator ExitPlayingState()
+    {
+        if (logStateChanges) Debug.Log("Exiting Playing state");
+        
+        // Save game state, cleanup
+        yield return null;
+    }
+    
+    IEnumerator EnterPausedState()
+    {
+        if (logStateChanges) Debug.Log("Entering Paused state");
+        
+        // Show pause menu
+        if (uiManager != null)
+        {
+            uiManager.ShowPauseMenu();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator ExitPausedState()
+    {
+        if (logStateChanges) Debug.Log("Exiting Paused state");
+        
+        // Hide pause menu
+        if (uiManager != null)
+        {
+            uiManager.HidePauseMenu();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator EnterGameOverState()
+    {
+        if (logStateChanges) Debug.Log("Entering Game Over state");
+        
+        // Show game over screen
+        if (uiManager != null)
+        {
+            uiManager.ShowGameOverScreen();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator EnterVictoryState()
+    {
+        if (logStateChanges) Debug.Log("Entering Victory state");
+        
+        // Show victory screen
+        if (uiManager != null)
+        {
+            uiManager.ShowVictoryScreen();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator EnterSettingsState()
+    {
+        if (logStateChanges) Debug.Log("Entering Settings state");
+        
+        // Show settings menu
+        if (uiManager != null)
+        {
+            uiManager.ShowSettingsMenu();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator ExitSettingsState()
+    {
+        if (logStateChanges) Debug.Log("Exiting Settings state");
+        
+        // Hide settings menu, save settings
+        if (uiManager != null)
+        {
+            uiManager.HideSettingsMenu();
+        }
+        
+        yield return null;
+    }
+    
+    IEnumerator EnterCreditsState()
+    {
+        if (logStateChanges) Debug.Log("Entering Credits state");
+        
+        // Show credits screen
+        if (uiManager != null)
+        {
+            uiManager.ShowCreditsScreen();
+        }
+        
+        yield return null;
+    }
+    
+    // State validation
+    bool IsValidState(GameState state)
+    {
+        return stateConfigs.ContainsKey(state);
+    }
+    
+    bool IsValidTransition(GameState from, GameState to)
+    {
+        if (!stateConfigs.ContainsKey(from))
+        {
+            return false;
+        }
+        
+        GameStateConfig fromConfig = stateConfigs[from];
+        
+        if (fromConfig.validTransitions == null || fromConfig.validTransitions.Length == 0)
+        {
+            return true; // No restrictions defined
+        }
+        
+        foreach (GameState validTransition in fromConfig.validTransitions)
+        {
+            if (validTransition == to)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // State history management
+    void AddToStateHistory(GameState state)
+    {
+        stateHistory.Add(state);
+        
+        if (stateHistory.Count &gt; maxHistorySize)
+        {
+            stateHistory.RemoveAt(0);
+        }
+    }
+    
+    void UpdateCurrentState()
+    {
+        float stateTime = Time.time - stateEnterTime;
+        OnStateUpdate?.Invoke(currentState, stateTime);
+    }
+    
+    void HandleDebugInput()
+    {
+        #if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            LogStateManagerStatus();
+        }
+        #endif
+    }
+    
+    // Public query methods
+    public GameState GetCurrentState()
+    {
+        return currentState;
+    }
+    
+    public GameState GetPreviousState()
+    {
+        return previousState;
+    }
+    
+    public float GetTimeInCurrentState()
+    {
+        return Time.time - stateEnterTime;
+    }
+    
+    public bool IsInState(GameState state)
+    {
+        return currentState == state;
+    }
+    
+    public bool IsTransitioning()
+    {
+        return isTransitioning;
+    }
+    
+    public bool CanTransitionTo(GameState state)
+    {
+        return !isTransitioning &amp;&amp; IsValidTransition(currentState, state);
+    }
+    
+    public GameStateConfig GetCurrentStateConfig()
+    {
+        return currentStateConfig;
+    }
+    
+    public List&lt;GameState&gt; GetStateHistory()
+    {
+        return new List&lt;GameState&gt;(stateHistory);
+    }
+    
+    // Debug methods
+    public void LogStateManagerStatus()
+    {
+        Debug.Log("=== Game State Manager Status ===");
+        Debug.Log($"Current State: {currentState}");
+        Debug.Log($"Previous State: {previousState}");
+        Debug.Log($"Time in State: {GetTimeInCurrentState():F2} seconds");
+        Debug.Log($"Is Transitioning: {isTransitioning}");
+        Debug.Log($"Time Scale: {Time.timeScale}");
+        Debug.Log($"State History: {string.Join(" → ", stateHistory)}");
+        
+        if (currentStateConfig != null)
+        {
+            Debug.Log($"State Config:");
+            Debug.Log($"  Allows Pausing: {currentStateConfig.allowsPausing}");
+            Debug.Log($"  Allows Input: {currentStateConfig.allowsInput}");
+            Debug.Log($"  Pauses Time: {currentStateConfig.pausesTime}");
+            Debug.Log($"  Associated Scene: {currentStateConfig.associatedScene}");
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Data Persistence and Save Systems</h2>
+                
+                <p>Game data persistence requires a robust architecture similar to database management in enterprise applications. You need to handle player progress, settings, achievements, and game state across sessions while ensuring data integrity, version compatibility, and efficient loading/saving operations.</p>
+
+                <h3>Comprehensive Save System</h3>
+
+                <div class="code-example">
+                    <h4>Advanced Save/Load Manager</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+using System;
+using Newtonsoft.Json;
+
+[System.Serializable]
+public class GameSaveData
+{
+    public string version = "1.0";
+    public DateTime saveTime;
+    public long saveTimeUtc;
+    public string playerName;
+    public int currentLevel;
+    public Vector3 playerPosition;
+    public float playtimeHours;
+    public Dictionary&lt;string, object&gt; gameplayData = new Dictionary&lt;string, object&gt;();
+    public Dictionary&lt;string, bool&gt; achievements = new Dictionary&lt;string, bool&gt;();
+    public Dictionary&lt;string, float&gt; settings = new Dictionary&lt;string, float&gt;();
+    public string currentSceneName;
+    public GameState gameState;
+    
+    public GameSaveData()
+    {
+        saveTime = DateTime.Now;
+        saveTimeUtc = DateTime.UtcNow.ToBinary();
+    }
+    
+    public void UpdateSaveTime()
+    {
+        saveTime = DateTime.Now;
+        saveTimeUtc = DateTime.UtcNow.ToBinary();
+    }
+    
+    public DateTime GetSaveTimeUtc()
+    {
+        return DateTime.FromBinary(saveTimeUtc);
+    }
+}
+
+[System.Serializable]
+public class SaveSlot
+{
+    public int slotIndex;
+    public string displayName;
+    public bool isEmpty;
+    public DateTime lastSaveTime;
+    public string previewImagePath;
+    public GameSaveData saveData;
+}
+
+public enum SaveFormat
+{
+    Binary,
+    JSON,
+    Encrypted
+}
+
+public enum SaveResult
+{
+    Success,
+    Failed,
+    InvalidData,
+    PermissionDenied,
+    DiskFull,
+    CorruptedData
+}
+
+public class SaveManager : MonoBehaviour
+{
+    [Header("Save Configuration")]
+    public int maxSaveSlots = 10;
+    public bool autoSave = true;
+    public float autoSaveInterval = 300f; // 5 minutes
+    public SaveFormat saveFormat = SaveFormat.JSON;
+    
+    [Header("File Settings")]
+    public string saveFileName = "GameSave";
+    public string saveFileExtension = ".sav";
+    public bool useEncryption = false;
+    public string encryptionKey = "DefaultKey123";
+    
+    [Header("Backup Settings")]
+    public bool createBackups = true;
+    public int maxBackups = 3;
+    public bool backupOnVersionChange = true;
+    
+    [Header("Debug Settings")]
+    public bool logSaveOperations = true;
+    public bool validateDataOnLoad = true;
+    
+    // Save data management
+    private GameSaveData currentSaveData;
+    private List&lt;SaveSlot&gt; saveSlots = new List&lt;SaveSlot&gt;();
+    private int currentSlotIndex = 0;
+    
+    // Auto-save management
+    private float lastAutoSaveTime = 0f;
+    private Coroutine autoSaveCoroutine;
+    
+    // File paths
+    private string saveDirectory;
+    private string backupDirectory;
+    
+    // Events
+    public System.Action&lt;SaveResult, int&gt; OnSaveCompleted;
+    public System.Action&lt;SaveResult, int, GameSaveData&gt; OnLoadCompleted;
+    public System.Action&lt;int&gt; OnAutoSave;
+    public System.Action&lt;string&gt; OnSaveError;
+    
+    // Singleton pattern
+    public static SaveManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            InitializeSaveSystem();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    
+    void Start()
+    {
+        LoadSaveSlots();
+        
+        if (autoSave)
+        {
+            StartAutoSave();
+        }
+    }
+    
+    void InitializeSaveSystem()
+    {
+        // Setup save directories
+        saveDirectory = Path.Combine(Application.persistentDataPath, "Saves");
+        backupDirectory = Path.Combine(saveDirectory, "Backups");
+        
+        // Create directories if they don't exist
+        if (!Directory.Exists(saveDirectory))
+        {
+            Directory.CreateDirectory(saveDirectory);
+        }
+        
+        if (createBackups &amp;&amp; !Directory.Exists(backupDirectory))
+        {
+            Directory.CreateDirectory(backupDirectory);
+        }
+        
+        // Initialize save data
+        currentSaveData = new GameSaveData();
+        
+        if (logSaveOperations)
+        {
+            Debug.Log($"Save system initialized. Directory: {saveDirectory}");
+        }
+    }
+    
+    void LoadSaveSlots()
+    {
+        saveSlots.Clear();
+        
+        for (int i = 0; i &lt; maxSaveSlots; i++)
+        {
+            SaveSlot slot = new SaveSlot
+            {
+                slotIndex = i,
+                displayName = $"Save Slot {i + 1}",
+                isEmpty = true
+            };
+            
+            string filePath = GetSaveFilePath(i);
+            
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    GameSaveData saveData = LoadSaveDataFromFile(filePath);
+                    if (saveData != null)
+                    {
+                        slot.isEmpty = false;
+                        slot.lastSaveTime = saveData.saveTime;
+                        slot.saveData = saveData;
+                        slot.displayName = $"Save Slot {i + 1} - {saveData.playerName} (Level {saveData.currentLevel})";
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to load save slot {i}: {e.Message}");
+                    slot.isEmpty = true;
+                }
+            }
+            
+            saveSlots.Add(slot);
+        }
+        
+        if (logSaveOperations)
+        {
+            int occupiedSlots = saveSlots.FindAll(s =&gt; !s.isEmpty).Count;
+            Debug.Log($"Loaded {occupiedSlots}/{maxSaveSlots} save slots");
+        }
+    }
+    
+    // Public API for saving
+    public void SaveGame(int slotIndex = -1)
+    {
+        if (slotIndex == -1)
+        {
+            slotIndex = currentSlotIndex;
+        }
+        
+        if (slotIndex &lt; 0 || slotIndex &gt;= maxSaveSlots)
+        {
+            OnSaveCompleted?.Invoke(SaveResult.InvalidData, slotIndex);
+            return;
+        }
+        
+        StartCoroutine(SaveGameCoroutine(slotIndex));
+    }
+    
+    public void SaveGameToNewSlot()
+    {
+        int emptySlot = FindEmptySlot();
+        if (emptySlot != -1)
+        {
+            SaveGame(emptySlot);
+        }
+        else
+        {
+            OnSaveCompleted?.Invoke(SaveResult.Failed, -1);
+            OnSaveError?.Invoke("No empty save slots available");
+        }
+    }
+    
+    public void QuickSave()
+    {
+        SaveGame(0); // Use slot 0 for quick save
+    }
+    
+    public void LoadGame(int slotIndex)
+    {
+        if (slotIndex &lt; 0 || slotIndex &gt;= maxSaveSlots)
+        {
+            OnLoadCompleted?.Invoke(SaveResult.InvalidData, slotIndex, null);
+            return;
+        }
+        
+        StartCoroutine(LoadGameCoroutine(slotIndex));
+    }
+    
+    public void QuickLoad()
+    {
+        LoadGame(0); // Use slot 0 for quick load
+    }
+    
+    public void DeleteSave(int slotIndex)
+    {
+        if (slotIndex &lt; 0 || slotIndex &gt;= maxSaveSlots)
+        {
+            return;
+        }
+        
+        string filePath = GetSaveFilePath(slotIndex);
+        
+        try
+        {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                
+                // Update save slot
+                saveSlots[slotIndex].isEmpty = true;
+                saveSlots[slotIndex].saveData = null;
+                saveSlots[slotIndex].displayName = $"Save Slot {slotIndex + 1}";
+                
+                if (logSaveOperations)
+                {
+                    Debug.Log($"Deleted save slot {slotIndex}");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to delete save slot {slotIndex}: {e.Message}");
+            OnSaveError?.Invoke($"Failed to delete save: {e.Message}");
+        }
+    }
+    
+    // Core save/load implementation
+    System.Collections.IEnumerator SaveGameCoroutine(int slotIndex)
+    {
+        if (logSaveOperations)
+        {
+            Debug.Log($"Starting save to slot {slotIndex}");
+        }
+        
+        // Update save data with current game state
+        UpdateSaveDataWithCurrentState();
+        
+        // Create backup if enabled and save exists
+        if (createBackups)
+        {
+            yield return StartCoroutine(CreateBackup(slotIndex));
+        }
+        
+        string filePath = GetSaveFilePath(slotIndex);
+        SaveResult result = SaveResult.Success;
+        
+        try
+        {
+            // Save data to file
+            bool success = SaveDataToFile(currentSaveData, filePath);
+            
+            if (success)
+            {
+                // Update save slot
+                SaveSlot slot = saveSlots[slotIndex];
+                slot.isEmpty = false;
+                slot.lastSaveTime = currentSaveData.saveTime;
+                slot.saveData = currentSaveData;
+                slot.displayName = $"Save Slot {slotIndex + 1} - {currentSaveData.playerName} (Level {currentSaveData.currentLevel})";
+                
+                currentSlotIndex = slotIndex;
+                
+                if (logSaveOperations)
+                {
+                    Debug.Log($"Save completed successfully to slot {slotIndex}");
+                }
+            }
+            else
+            {
+                result = SaveResult.Failed;
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            result = SaveResult.PermissionDenied;
+            OnSaveError?.Invoke("Permission denied when saving game");
+        }
+        catch (IOException e)
+        {
+            result = SaveResult.DiskFull;
+            OnSaveError?.Invoke($"IO Error when saving: {e.Message}");
+        }
+        catch (Exception e)
+        {
+            result = SaveResult.Failed;
+            OnSaveError?.Invoke($"Unexpected error when saving: {e.Message}");
+        }
+        
+        OnSaveCompleted?.Invoke(result, slotIndex);
+        
+        yield return null;
+    }
+    
+    System.Collections.IEnumerator LoadGameCoroutine(int slotIndex)
+    {
+        if (logSaveOperations)
+        {
+            Debug.Log($"Starting load from slot {slotIndex}");
+        }
+        
+        string filePath = GetSaveFilePath(slotIndex);
+        SaveResult result = SaveResult.Success;
+        GameSaveData loadedData = null;
+        
+        try
+        {
+            if (File.Exists(filePath))
+            {
+                loadedData = LoadSaveDataFromFile(filePath);
+                
+                if (loadedData != null)
+                {
+                    // Validate data if enabled
+                    if (validateDataOnLoad &amp;&amp; !ValidateSaveData(loadedData))
+                    {
+                        result = SaveResult.CorruptedData;
+                        OnSaveError?.Invoke("Save data validation failed");
+                    }
+                    else
+                    {
+                        currentSaveData = loadedData;
+                        currentSlotIndex = slotIndex;
+                        
+                        // Apply loaded data to game state
+                        yield return StartCoroutine(ApplyLoadedData(loadedData));
+                        
+                        if (logSaveOperations)
+                        {
+                            Debug.Log($"Load completed successfully from slot {slotIndex}");
+                        }
+                    }
+                }
+                else
+                {
+                    result = SaveResult.CorruptedData;
+                    OnSaveError?.Invoke("Failed to parse save data");
+                }
+            }
+            else
+            {
+                result = SaveResult.Failed;
+                OnSaveError?.Invoke("Save file does not exist");
+            }
+        }
+        catch (Exception e)
+        {
+            result = SaveResult.Failed;
+            OnSaveError?.Invoke($"Error loading save: {e.Message}");
+        }
+        
+        OnLoadCompleted?.Invoke(result, slotIndex, loadedData);
+        
+        yield return null;
+    }
+    
+    void UpdateSaveDataWithCurrentState()
+    {
+        currentSaveData.UpdateSaveTime();
+        
+        // Get current game state
+        if (GameStateManager.Instance != null)
+        {
+            currentSaveData.gameState = GameStateManager.Instance.GetCurrentState();
+        }
+        
+        // Get current scene
+        currentSaveData.currentSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        
+        // Get player position (if player exists)
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            currentSaveData.playerPosition = player.transform.position;
+        }
+        
+        // Update playtime
+        currentSaveData.playtimeHours += Time.time / 3600f; // Rough estimate
+        
+        // Add any additional game-specific data
+        GatherGameSpecificSaveData();
+        
+        if (logSaveOperations)
+        {
+            Debug.Log($"Updated save data: Scene={currentSaveData.currentSceneName}, State={currentSaveData.gameState}, Time={currentSaveData.playtimeHours:F1}h");
+        }
+    }
+    
+    void GatherGameSpecificSaveData()
+    {
+        // This method should be overridden or extended for specific game needs
+        // Example implementations:
+        
+        // Inventory data
+        // var inventory = FindObjectOfType&lt;InventoryManager&gt;();
+        // if (inventory != null)
+        // {
+        //     currentSaveData.gameplayData["inventory"] = inventory.GetSaveData();
+        // }
+        
+        // Player stats
+        // var playerStats = FindObjectOfType&lt;PlayerStats&gt;();
+        // if (playerStats != null)
+        // {
+        //     currentSaveData.gameplayData["playerStats"] = playerStats.GetSaveData();
+        // }
+        
+        // Quest progress
+        // var questManager = FindObjectOfType&lt;QuestManager&gt;();
+        // if (questManager != null)
+        // {
+        //     currentSaveData.gameplayData["quests"] = questManager.GetSaveData();
+        // }
+    }
+    
+    System.Collections.IEnumerator ApplyLoadedData(GameSaveData saveData)
+    {
+        // Load scene if different from current
+        if (saveData.currentSceneName != UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)
+        {
+            if (SceneManager.Instance != null)
+            {
+                SceneManager.Instance.LoadScene(saveData.currentSceneName);
+                
+                // Wait for scene to load
+                while (SceneManager.Instance.GetLoadingState() == LoadingState.Loading)
+                {
+                    yield return null;
+                }
+            }
+        }
+        
+        // Set player position
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            player.transform.position = saveData.playerPosition;
+        }
+        
+        // Apply game state
+        if (GameStateManager.Instance != null)
+        {
+            GameStateManager.Instance.ChangeState(saveData.gameState);
+        }
+        
+        // Apply game-specific data
+        yield return StartCoroutine(ApplyGameSpecificData(saveData));
+        
+        if (logSaveOperations)
+        {
+            Debug.Log($"Applied loaded data: Player at {saveData.playerPosition}, Game state: {saveData.gameState}");
+        }
+    }
+    
+    System.Collections.IEnumerator ApplyGameSpecificData(GameSaveData saveData)
+    {
+        // Apply inventory data
+        if (saveData.gameplayData.ContainsKey("inventory"))
+        {
+            // var inventory = FindObjectOfType&lt;InventoryManager&gt;();
+            // if (inventory != null)
+            // {
+            //     inventory.LoadSaveData(saveData.gameplayData["inventory"]);
+            // }
+        }
+        
+        // Apply player stats
+        if (saveData.gameplayData.ContainsKey("playerStats"))
+        {
+            // var playerStats = FindObjectOfType&lt;PlayerStats&gt;();
+            // if (playerStats != null)
+            // {
+            //     playerStats.LoadSaveData(saveData.gameplayData["playerStats"]);
+            // }
+        }
+        
+        // Apply quest progress
+        if (saveData.gameplayData.ContainsKey("quests"))
+        {
+            // var questManager = FindObjectOfType&lt;QuestManager&gt;();
+            // if (questManager != null)
+            // {
+            //     questManager.LoadSaveData(saveData.gameplayData["quests"]);
+            // }
+        }
+        
+        yield return null;
+    }
+    
+    // File operations
+    bool SaveDataToFile(GameSaveData data, string filePath)
+    {
+        try
+        {
+            string dataString;
+            
+            switch (saveFormat)
+            {
+                case SaveFormat.JSON:
+                    dataString = JsonConvert.SerializeObject(data, Formatting.Indented);
+                    break;
+                case SaveFormat.Binary:
+                    return SaveDataToBinaryFile(data, filePath);
+                case SaveFormat.Encrypted:
+                    dataString = JsonConvert.SerializeObject(data, Formatting.None);
+                    dataString = EncryptString(dataString);
+                    break;
+                default:
+                    dataString = JsonConvert.SerializeObject(data, Formatting.Indented);
+                    break;
+            }
+            
+            File.WriteAllText(filePath, dataString);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to save data to file: {e.Message}");
+            return false;
+        }
+    }
+    
+    GameSaveData LoadSaveDataFromFile(string filePath)
+    {
+        try
+        {
+            switch (saveFormat)
+            {
+                case SaveFormat.JSON:
+                    string jsonData = File.ReadAllText(filePath);
+                    return JsonConvert.DeserializeObject&lt;GameSaveData&gt;(jsonData);
+                    
+                case SaveFormat.Binary:
+                    return LoadDataFromBinaryFile(filePath);
+                    
+                case SaveFormat.Encrypted:
+                    string encryptedData = File.ReadAllText(filePath);
+                    string decryptedData = DecryptString(encryptedData);
+                    return JsonConvert.DeserializeObject&lt;GameSaveData&gt;(decryptedData);
+                    
+                default:
+                    string defaultJsonData = File.ReadAllText(filePath);
+                    return JsonConvert.DeserializeObject&lt;GameSaveData&gt;(defaultJsonData);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to load data from file: {e.Message}");
+            return null;
+        }
+    }
+    
+    bool SaveDataToBinaryFile(GameSaveData data, string filePath)
+    {
+        try
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (FileStream stream = new FileStream(filePath, FileMode.Create))
+            {
+                formatter.Serialize(stream, data);
+            }
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to save binary data: {e.Message}");
+            return false;
+        }
+    }
+    
+    GameSaveData LoadDataFromBinaryFile(string filePath)
+    {
+        try
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (FileStream stream = new FileStream(filePath, FileMode.Open))
+            {
+                return (GameSaveData)formatter.Deserialize(stream);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to load binary data: {e.Message}");
+            return null;
+        }
+    }
+    
+    // Encryption methods (basic example - use proper encryption for production)
+    string EncryptString(string plainText)
+    {
+        if (string.IsNullOrEmpty(plainText))
+            return plainText;
+        
+        byte[] data = System.Text.Encoding.UTF8.GetBytes(plainText);
+        return System.Convert.ToBase64String(data);
+    }
+    
+    string DecryptString(string cipherText)
+    {
+        if (string.IsNullOrEmpty(cipherText))
+            return cipherText;
+        
+        try
+        {
+            byte[] data = System.Convert.FromBase64String(cipherText);
+            return System.Text.Encoding.UTF8.GetString(data);
+        }
+        catch
+        {
+            return cipherText; // Return original if decryption fails
+        }
+    }
+    
+    // Backup management
+    System.Collections.IEnumerator CreateBackup(int slotIndex)
+    {
+        string originalPath = GetSaveFilePath(slotIndex);
+        
+        if (!File.Exists(originalPath))
+        {
+            yield break;
+        }
+        
+        try
+        {
+            string backupFileName = $"{saveFileName}_{slotIndex}_backup_{DateTime.Now:yyyyMMdd_HHmmss}{saveFileExtension}";
+            string backupPath = Path.Combine(backupDirectory, backupFileName);
+            
+            File.Copy(originalPath, backupPath);
+            
+            // Clean up old backups
+            CleanupOldBackups(slotIndex);
+            
+            if (logSaveOperations)
+            {
+                Debug.Log($"Created backup: {backupFileName}");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Failed to create backup: {e.Message}");
+        }
+        
+        yield return null;
+    }
+    
+    void CleanupOldBackups(int slotIndex)
+    {
+        try
+        {
+            string searchPattern = $"{saveFileName}_{slotIndex}_backup_*{saveFileExtension}";
+            string[] backupFiles = Directory.GetFiles(backupDirectory, searchPattern);
+            
+            if (backupFiles.Length &gt; maxBackups)
+            {
+                // Sort by creation time and delete oldest
+                Array.Sort(backupFiles, (x, y) =&gt; File.GetCreationTime(x).CompareTo(File.GetCreationTime(y)));
+                
+                for (int i = 0; i &lt; backupFiles.Length - maxBackups; i++)
+                {
+                    File.Delete(backupFiles[i]);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"Failed to cleanup old backups: {e.Message}");
+        }
+    }
+    
+    // Auto-save functionality
+    void StartAutoSave()
+    {
+        if (autoSaveCoroutine != null)
+        {
+            StopCoroutine(autoSaveCoroutine);
+        }
+        
+        autoSaveCoroutine = StartCoroutine(AutoSaveCoroutine());
+    }
+    
+    void StopAutoSave()
+    {
+        if (autoSaveCoroutine != null)
+        {
+            StopCoroutine(autoSaveCoroutine);
+            autoSaveCoroutine = null;
+        }
+    }
+    
+    System.Collections.IEnumerator AutoSaveCoroutine()
+    {
+        while (autoSave)
+        {
+            yield return new WaitForSeconds(autoSaveInterval);
+            
+            // Only auto-save during gameplay
+            if (GameStateManager.Instance != null &amp;&amp; GameStateManager.Instance.IsInState(GameState.Playing))
+            {
+                SaveGame(0); // Auto-save to slot 0
+                OnAutoSave?.Invoke(0);
+                
+                if (logSaveOperations)
+                {
+                    Debug.Log("Auto-save completed");
+                }
+            }
+        }
+    }
+    
+    // Utility methods
+    string GetSaveFilePath(int slotIndex)
+    {
+        string fileName = $"{saveFileName}_{slotIndex}{saveFileExtension}";
+        return Path.Combine(saveDirectory, fileName);
+    }
+    
+    int FindEmptySlot()
+    {
+        for (int i = 0; i &lt; saveSlots.Count; i++)
+        {
+            if (saveSlots[i].isEmpty)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    bool ValidateSaveData(GameSaveData data)
+    {
+        // Basic validation checks
+        if (data == null) return false;
+        if (string.IsNullOrEmpty(data.version)) return false;
+        if (data.saveTimeUtc == 0) return false;
+        
+        // Version compatibility check
+        // You might want to implement version migration here
+        
+        return true;
+    }
+    
+    // Public query methods
+    public List&lt;SaveSlot&gt; GetSaveSlots()
+    {
+        return new List&lt;SaveSlot&gt;(saveSlots);
+    }
+    
+    public SaveSlot GetSaveSlot(int index)
+    {
+        return (index &gt;= 0 &amp;&amp; index &lt; saveSlots.Count) ? saveSlots[index] : null;
+    }
+    
+    public int GetCurrentSlotIndex()
+    {
+        return currentSlotIndex;
+    }
+    
+    public GameSaveData GetCurrentSaveData()
+    {
+        return currentSaveData;
+    }
+    
+    public bool HasSaveData(int slotIndex)
+    {
+        return slotIndex &gt;= 0 &amp;&amp; slotIndex &lt; saveSlots.Count &amp;&amp; !saveSlots[slotIndex].isEmpty;
+    }
+    
+    // Public settings
+    public void SetAutoSave(bool enabled)
+    {
+        autoSave = enabled;
+        
+        if (enabled)
+        {
+            StartAutoSave();
+        }
+        else
+        {
+            StopAutoSave();
+        }
+    }
+    
+    public void SetAutoSaveInterval(float intervalSeconds)
+    {
+        autoSaveInterval = intervalSeconds;
+        
+        if (autoSave)
+        {
+            StartAutoSave(); // Restart with new interval
+        }
+    }
+    
+    // Debug methods
+    public void LogSaveSystemStatus()
+    {
+        Debug.Log("=== Save System Status ===");
+        Debug.Log($"Save Directory: {saveDirectory}");
+        Debug.Log($"Current Slot: {currentSlotIndex}");
+        Debug.Log($"Auto-save: {autoSave} (Interval: {autoSaveInterval}s)");
+        Debug.Log($"Save Format: {saveFormat}");
+        Debug.Log($"Encryption: {useEncryption}");
+        
+        int occupiedSlots = saveSlots.FindAll(s =&gt; !s.isEmpty).Count;
+        Debug.Log($"Save Slots: {occupiedSlots}/{maxSaveSlots} occupied");
+        
+        for (int i = 0; i &lt; saveSlots.Count; i++)
+        {
+            SaveSlot slot = saveSlots[i];
+            if (!slot.isEmpty)
+            {
+                Debug.Log($"  Slot {i}: {slot.displayName} ({slot.lastSaveTime})");
+            }
+        }
+    }
+    
+    void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus &amp;&amp; autoSave)
+        {
+            // Auto-save when app is paused (mobile)
+            SaveGame();
+        }
+    }
+    
+    void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus &amp;&amp; autoSave)
+        {
+            // Auto-save when app loses focus
+            SaveGame();
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Loading Screens and Progress Management</h2>
+                
+                <p>Loading screens serve as the user interface for asynchronous operations, similar to progress indicators in web applications during AJAX requests or file uploads. They need to provide meaningful feedback, maintain user engagement, and handle edge cases like failed loads or unexpectedly long operations.</p>
+
+                <h3>Advanced Loading Screen System</h3>
+
+                <div class="code-example">
+                    <h4>Comprehensive Loading Screen Manager</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using System.Collections;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class LoadingTip
+{
+    public string tipText;
+    public Sprite associatedImage;
+    public float displayDuration = 5f;
+    public string[] tags; // For contextual tips
+}
+
+[System.Serializable]
+public class LoadingScreenConfig
+{
+    public string screenName;
+    public GameObject screenPrefab;
+    public LoadingScreenType screenType;
+    public bool showProgressBar = true;
+    public bool showLoadingText = true;
+    public bool showTips = true;
+    public bool showBackground = true;
+    public float minimumDisplayTime = 2f;
+    public string[] contextTags;
+}
+
+public enum LoadingScreenType
+{
+    Simple,
+    Detailed,
+    Interactive,
+    Cinematic
+}
+
+public class LoadingScreenManager : MonoBehaviour
+{
+    [Header("Loading Screen Configuration")]
+    public LoadingScreenConfig[] loadingScreens;
+    public LoadingTip[] loadingTips;
+    public Canvas loadingCanvas;
+    
+    [Header("UI References")]
+    public Slider progressBar;
+    public TextMeshProUGUI progressText;
+    public TextMeshProUGUI loadingStatusText;
+    public TextMeshProUGUI tipText;
+    public Image tipImage;
+    public Image backgroundImage;
+    public Button cancelButton;
+    
+    [Header("Animation Settings")]
+    public float fadeInDuration = 0.5f;
+    public float fadeOutDuration = 0.5f;
+    public float progressAnimationSpeed = 2f;
+    public AnimationCurve progressCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    
+    [Header("Tip Management")]
+    public float tipRotationInterval = 8f;
+    public bool randomizeTips = true;
+    public float tipFadeInTime = 0.5f;
+    public float tipFadeOutTime = 0.5f;
+    
+    [Header("Error Handling")]
+    public bool showRetryButton = true;
+    public float errorDisplayDuration = 5f;
+    public string defaultErrorMessage = "Loading failed. Please try again.";
+    
+    // Loading state
+    private bool isLoadingScreenActive = false;
+    private float currentProgress = 0f;
+    private float targetProgress = 0f;
+    private string currentLoadingText = "Loading...";
+    private LoadingScreenConfig currentScreenConfig;
+    
+    // Tip management
+    private Coroutine tipRotationCoroutine;
+    private List&lt;LoadingTip&gt; contextualTips = new List&lt;LoadingTip&gt;();
+    private int currentTipIndex = 0;
+    
+    // Animation coroutines
+    private Coroutine progressAnimationCoroutine;
+    private Coroutine fadeCoroutine;
+    private Coroutine tipAnimationCoroutine;
+    
+    // Loading operation tracking
+    private System.Action currentCancelAction;
+    private bool canCancel = false;
+    private float loadingStartTime;
+    private LoadingScreenType currentScreenType;
+    
+    // Events
+    public System.Action OnLoadingScreenShown;
+    public System.Action OnLoadingScreenHidden;
+    public System.Action OnLoadingCancelled;
+    public System.Action&lt;string&gt; OnLoadingError;
+    
+    // Singleton pattern
+    public static LoadingScreenManager Instance { get; private set; }
+    
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        InitializeLoadingScreen();
+    }
+    
+    void Start()
+    {
+        // Start with loading screen hidden
+        HideLoadingScreenImmediate();
+    }
+    
+    void InitializeLoadingScreen()
+    {
+        // Setup canvas
+        if (loadingCanvas == null)
+        {
+            loadingCanvas = GetComponent&lt;Canvas&gt;();
+        }
+        
+        if (loadingCanvas != null)
+        {
+            loadingCanvas.sortingOrder = 1000; // Render on top
+            loadingCanvas.planeDistance = 0.1f;
+        }
+        
+        // Setup cancel button
+        if (cancelButton != null)
+        {
+            cancelButton.onClick.AddListener(OnCancelButtonClicked);
+            cancelButton.gameObject.SetActive(false);
+        }
+        
+        // Initialize progress values
+        currentProgress = 0f;
+        targetProgress = 0f;
+        
+        Debug.Log($"Loading Screen Manager initialized with {loadingScreens.Length} screen configs");
+    }
+    
+    // Public API for loading screens
+    public void ShowLoadingScreen(string loadingText = "Loading...", string[] contextTags = null, bool allowCancel = false, System.Action cancelAction = null)
+    {
+        ShowLoadingScreen(LoadingScreenType.Simple, loadingText, contextTags, allowCancel, cancelAction);
+    }
+    
+    public void ShowLoadingScreen(LoadingScreenType screenType, string loadingText = "Loading...", string[] contextTags = null, bool allowCancel = false, System.Action cancelAction = null)
+    {
+        if (isLoadingScreenActive)
+        {
+            Debug.LogWarning("Loading screen is already active");
+            return;
+        }
+        
+        currentScreenType = screenType;
+        currentLoadingText = loadingText;
+        canCancel = allowCancel;
+        currentCancelAction = cancelAction;
+        loadingStartTime = Time.unscaledTime;
+        
+        // Find appropriate screen config
+        currentScreenConfig = GetScreenConfig(screenType, contextTags);
+        
+        StartCoroutine(ShowLoadingScreenCoroutine());
+    }
+    
+    public void HideLoadingScreen()
+    {
+        if (!isLoadingScreenActive)
+        {
+            return;
+        }
+        
+        StartCoroutine(HideLoadingScreenCoroutine());
+    }
+    
+    public void UpdateProgress(float progress, string statusText = null)
+    {
+        targetProgress = Mathf.Clamp01(progress);
+        
+        if (!string.IsNullOrEmpty(statusText))
+        {
+            currentLoadingText = statusText;
+            UpdateLoadingText();
+        }
+        
+        // Start progress animation if not already running
+        if (progressAnimationCoroutine == null)
+        {
+            progressAnimationCoroutine = StartCoroutine(AnimateProgress());
+        }
+    }
+    
+    public void SetError(string errorMessage = null)
+    {
+        string message = errorMessage ?? defaultErrorMessage;
+        
+        if (loadingStatusText != null)
+        {
+            loadingStatusText.text = message;
+            loadingStatusText.color = Color.red;
+        }
+        
+        if (showRetryButton &amp;&amp; cancelButton != null)
+        {
+            cancelButton.gameObject.SetActive(true);
+            var buttonText = cancelButton.GetComponentInChildren&lt;TextMeshProUGUI&gt;();
+            if (buttonText != null)
+            {
+                buttonText.text = "Retry";
+            }
+        }
+        
+        OnLoadingError?.Invoke(message);
+        
+        StartCoroutine(HideAfterError());
+    }
+    
+    // Core implementation
+    IEnumerator ShowLoadingScreenCoroutine()
+    {
+        isLoadingScreenActive = true;
+        OnLoadingScreenShown?.Invoke();
+        
+        // Setup UI elements based on configuration
+        SetupUIElements();
+        
+        // Setup contextual tips
+        SetupContextualTips();
+        
+        // Fade in the loading screen
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+        }
+        fadeCoroutine = StartCoroutine(FadeLoadingScreen(true));
+        
+        // Start tip rotation
+        if (currentScreenConfig.showTips &amp;&amp; contextualTips.Count &gt; 0)
+        {
+            StartTipRotation();
+        }
+        
+        // Wait for minimum display time
+        float elapsed = 0f;
+        while (elapsed &lt; currentScreenConfig.minimumDisplayTime)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+    }
+    
+    IEnumerator HideLoadingScreenCoroutine()
+    {
+        // Stop all animations and coroutines
+        StopAllLoadingAnimations();
+        
+        // Fade out the loading screen
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+        }
+        fadeCoroutine = StartCoroutine(FadeLoadingScreen(false));
+        
+        yield return fadeCoroutine;
+        
+        // Hide the entire loading canvas
+        HideLoadingScreenImmediate();
+        
+        OnLoadingScreenHidden?.Invoke();
+    }
+    
+    void HideLoadingScreenImmediate()
+    {
+        isLoadingScreenActive = false;
+        
+        if (loadingCanvas != null)
+        {
+            loadingCanvas.gameObject.SetActive(false);
+        }
+        
+        StopAllLoadingAnimations();
+        
+        // Reset values
+        currentProgress = 0f;
+        targetProgress = 0f;
+        currentTipIndex = 0;
+    }
+    
+    void SetupUIElements()
+    {
+        if (loadingCanvas != null)
+        {
+            loadingCanvas.gameObject.SetActive(true);
+        }
+        
+        // Configure progress bar
+        if (progressBar != null)
+        {
+            progressBar.gameObject.SetActive(currentScreenConfig.showProgressBar);
+            progressBar.value = 0f;
+        }
+        
+        // Configure loading text
+        if (loadingStatusText != null)
+        {
+            loadingStatusText.gameObject.SetActive(currentScreenConfig.showLoadingText);
+            loadingStatusText.text = currentLoadingText;
+            loadingStatusText.color = Color.white;
+        }
+        
+        // Configure progress text
+        if (progressText != null)
+        {
+            progressText.gameObject.SetActive(currentScreenConfig.showProgressBar);
+            progressText.text = "0%";
+        }
+        
+        // Configure cancel button
+        if (cancelButton != null)
+        {
+            cancelButton.gameObject.SetActive(canCancel);
+            var buttonText = cancelButton.GetComponentInChildren&lt;TextMeshProUGUI&gt;();
+            if (buttonText != null)
+            {
+                buttonText.text = "Cancel";
+            }
+        }
+        
+        // Configure tip display
+        if (tipText != null)
+        {
+            tipText.gameObject.SetActive(currentScreenConfig.showTips);
+        }
+        
+        if (tipImage != null)
+        {
+            tipImage.gameObject.SetActive(currentScreenConfig.showTips);
+        }
+        
+        // Configure background
+        if (backgroundImage != null)
+        {
+            backgroundImage.gameObject.SetActive(currentScreenConfig.showBackground);
+        }
+    }
+    
+    void SetupContextualTips()
+    {
+        contextualTips.Clear();
+        
+        if (currentScreenConfig.contextTags == null || currentScreenConfig.contextTags.Length == 0)
+        {
+            // No context tags - use all tips
+            contextualTips.AddRange(loadingTips);
+        }
+        else
+        {
+            // Filter tips by context tags
+            foreach (LoadingTip tip in loadingTips)
+            {
+                if (tip.tags != null)
+                {
+                    foreach (string contextTag in currentScreenConfig.contextTags)
+                    {
+                        if (System.Array.Exists(tip.tags, tag =&gt; tag == contextTag))
+                        {
+                            contextualTips.Add(tip);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If no contextual tips found, use all tips as fallback
+            if (contextualTips.Count == 0)
+            {
+                contextualTips.AddRange(loadingTips);
+            }
+        }
+        
+        // Randomize tip order if configured
+        if (randomizeTips &amp;&amp; contextualTips.Count &gt; 1)
+        {
+            for (int i = 0; i &lt; contextualTips.Count; i++)
+            {
+                LoadingTip temp = contextualTips[i];
+                int randomIndex = Random.Range(i, contextualTips.Count);
+                contextualTips[i] = contextualTips[randomIndex];
+                contextualTips[randomIndex] = temp;
+            }
+        }
+    }
+    
+    // Animation coroutines
+    IEnumerator AnimateProgress()
+    {
+        while (Mathf.Abs(currentProgress - targetProgress) &gt; 0.001f)
+        {
+            currentProgress = Mathf.MoveTowards(currentProgress, targetProgress, 
+                progressAnimationSpeed * Time.unscaledDeltaTime);
+            
+            float easedProgress = progressCurve.Evaluate(currentProgress);
+            
+            if (progressBar != null)
+            {
+                progressBar.value = easedProgress;
+            }
+            
+            if (progressText != null)
+            {
+                progressText.text = $"{easedProgress * 100f:F0}%";
+            }
+            
+            yield return null;
+        }
+        
+        progressAnimationCoroutine = null;
+    }
+    
+    IEnumerator FadeLoadingScreen(bool fadeIn)
+    {
+        CanvasGroup canvasGroup = loadingCanvas.GetComponent&lt;CanvasGroup&gt;();
+        if (canvasGroup == null)
+        {
+            canvasGroup = loadingCanvas.gameObject.AddComponent&lt;CanvasGroup&gt;();
+        }
+        
+        float duration = fadeIn ? fadeInDuration : fadeOutDuration;
+        float startAlpha = canvasGroup.alpha;
+        float targetAlpha = fadeIn ? 1f : 0f;
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; duration)
+        {
+            elapsedTime += Time.unscaledDeltaTime;
+            float t = elapsedTime / duration;
+            canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, t);
+            yield return null;
+        }
+        
+        canvasGroup.alpha = targetAlpha;
+    }
+    
+    void StartTipRotation()
+    {
+        if (tipRotationCoroutine != null)
+        {
+            StopCoroutine(tipRotationCoroutine);
+        }
+        
+        tipRotationCoroutine = StartCoroutine(TipRotationCoroutine());
+    }
+    
+    IEnumerator TipRotationCoroutine()
+    {
+        while (isLoadingScreenActive &amp;&amp; contextualTips.Count &gt; 0)
+        {
+            LoadingTip currentTip = contextualTips[currentTipIndex];
+            
+            // Fade in tip
+            yield return StartCoroutine(AnimateTip(currentTip, true));
+            
+            // Display tip for specified duration
+            float displayTime = currentTip.displayDuration;
+            yield return new WaitForSecondsRealtime(displayTime);
+            
+            // Fade out tip
+            yield return StartCoroutine(AnimateTip(currentTip, false));
+            
+            // Move to next tip
+            currentTipIndex = (currentTipIndex + 1) % contextualTips.Count;
+            
+            // Wait before showing next tip
+            yield return new WaitForSecondsRealtime(0.5f);
+        }
+    }
+    
+    IEnumerator AnimateTip(LoadingTip tip, bool fadeIn)
+    {
+        if (fadeIn)
+        {
+            // Set tip content
+            if (tipText != null)
+            {
+                tipText.text = tip.tipText;
+            }
+            
+            if (tipImage != null &amp;&amp; tip.associatedImage != null)
+            {
+                tipImage.sprite = tip.associatedImage;
+                tipImage.gameObject.SetActive(true);
+            }
+            else if (tipImage != null)
+            {
+                tipImage.gameObject.SetActive(false);
+            }
+        }
+        
+        // Animate alpha
+        float duration = fadeIn ? tipFadeInTime : tipFadeOutTime;
+        float startAlpha = fadeIn ? 0f : 1f;
+        float targetAlpha = fadeIn ? 1f : 0f;
+        float elapsedTime = 0f;
+        
+        while (elapsedTime &lt; duration)
+        {
+            elapsedTime += Time.unscaledDeltaTime;
+            float t = elapsedTime / duration;
+            float alpha = Mathf.Lerp(startAlpha, targetAlpha, t);
+            
+            if (tipText != null)
+            {
+                Color textColor = tipText.color;
+                textColor.a = alpha;
+                tipText.color = textColor;
+            }
+            
+            if (tipImage != null)
+            {
+                Color imageColor = tipImage.color;
+                imageColor.a = alpha;
+                tipImage.color = imageColor;
+            }
+            
+            yield return null;
+        }
+    }
+    
+    IEnumerator HideAfterError()
+    {
+        yield return new WaitForSecondsRealtime(errorDisplayDuration);
+        
+        if (isLoadingScreenActive)
+        {
+            HideLoadingScreen();
+        }
+    }
+    
+    // Helper methods
+    LoadingScreenConfig GetScreenConfig(LoadingScreenType screenType, string[] contextTags)
+    {
+        LoadingScreenConfig bestMatch = null;
+        int bestMatchScore = -1;
+        
+        foreach (LoadingScreenConfig config in loadingScreens)
+        {
+            if (config.screenType == screenType)
+            {
+                int matchScore = 0;
+                
+                // Calculate context tag matches
+                if (contextTags != null &amp;&amp; config.contextTags != null)
+                {
+                    foreach (string contextTag in contextTags)
+                    {
+                        if (System.Array.Exists(config.contextTags, tag =&gt; tag == contextTag))
+                        {
+                            matchScore++;
+                        }
+                    }
+                }
+                
+                if (matchScore &gt; bestMatchScore || bestMatch == null)
+                {
+                    bestMatch = config;
+                    bestMatchScore = matchScore;
+                }
+            }
+        }
+        
+        // Fallback to first config if no match found
+        return bestMatch ?? loadingScreens[0];
+    }
+    
+    void UpdateLoadingText()
+    {
+        if (loadingStatusText != null)
+        {
+            loadingStatusText.text = currentLoadingText;
+        }
+    }
+    
+    void StopAllLoadingAnimations()
+    {
+        if (progressAnimationCoroutine != null)
+        {
+            StopCoroutine(progressAnimationCoroutine);
+            progressAnimationCoroutine = null;
+        }
+        
+        if (tipRotationCoroutine != null)
+        {
+            StopCoroutine(tipRotationCoroutine);
+            tipRotationCoroutine = null;
+        }
+        
+        if (tipAnimationCoroutine != null)
+        {
+            StopCoroutine(tipAnimationCoroutine);
+            tipAnimationCoroutine = null;
+        }
+    }
+    
+    // Event handlers
+    void OnCancelButtonClicked()
+    {
+        if (canCancel)
+        {
+            OnLoadingCancelled?.Invoke();
+            
+            if (currentCancelAction != null)
+            {
+                currentCancelAction.Invoke();
+            }
+            
+            HideLoadingScreen();
+        }
+    }
+    
+    // Public query methods
+    public bool IsLoadingScreenActive()
+    {
+        return isLoadingScreenActive;
+    }
+    
+    public float GetCurrentProgress()
+    {
+        return currentProgress;
+    }
+    
+    public float GetLoadingTime()
+    {
+        return isLoadingScreenActive ? Time.unscaledTime - loadingStartTime : 0f;
+    }
+    
+    public void AddLoadingTip(LoadingTip tip)
+    {
+        var tipList = new List&lt;LoadingTip&gt;(loadingTips);
+        tipList.Add(tip);
+        loadingTips = tipList.ToArray();
+    }
+    
+    public void SetProgressBarColor(Color color)
+    {
+        if (progressBar != null)
+        {
+            var fillRect = progressBar.fillRect;
+            if (fillRect != null)
+            {
+                Image fillImage = fillRect.GetComponent&lt;Image&gt;();
+                if (fillImage != null)
+                {
+                    fillImage.color = color;
+                }
+            }
+        }
+    }
+    
+    // Debug methods
+    public void LogLoadingScreenStatus()
+    {
+        Debug.Log("=== Loading Screen Status ===");
+        Debug.Log($"Active: {isLoadingScreenActive}");
+        Debug.Log($"Current Progress: {currentProgress:F2} → {targetProgress:F2}");
+        Debug.Log($"Screen Type: {currentScreenType}");
+        Debug.Log($"Loading Text: {currentLoadingText}");
+        Debug.Log($"Can Cancel: {canCancel}");
+        Debug.Log($"Loading Time: {GetLoadingTime():F2} seconds");
+        Debug.Log($"Available Tips: {contextualTips.Count}");
+        Debug.Log($"Current Tip: {currentTipIndex}");
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Key Takeaways</h2>
+                
+                <p>Unity's Scene Management and game flow systems provide the foundation for complex, multi-level games with sophisticated state management. By understanding async loading patterns, implementing robust save systems, and creating polished loading experiences, you can build games that feel professional and handle edge cases gracefully.</p>
+
+                <div class="info-box">
+                    <h4>Scene Management Best Practices</h4>
+                    <ul>
+                        <li>Use async scene loading to prevent frame drops and maintain smooth gameplay</li>
+                        <li>Implement proper memory management with UnloadUnusedAssets() after scene transitions</li>
+                        <li>Create modular game states that can transition smoothly between different game phases</li>
+                        <li>Design save systems with versioning and backward compatibility in mind</li>
+                        <li>Provide meaningful feedback during loading operations with progress indicators and tips</li>
+                        <li>Handle edge cases like corrupted saves, failed loads, and interrupted operations</li>
+                        <li>Test scene transitions thoroughly across different hardware configurations</li>
+                    </ul>
+                </div>
+
+                <p>Scene management becomes the backbone that connects all other game systems—from UI and audio to physics and input handling. In the next chapter, we'll bring together everything you've learned to build your first complete game, demonstrating how all these systems work together in a cohesive project.</p>
+            </section>
+
+            <div class="chapter-nav">
+                <a href="chapter08.html" class="nav-button prev">← Previous: Audio & Visual Effects</a>
+                <a href="chapter10.html" class="nav-button next">Next: Complete Game →</a>
+            </div>
+        </article>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> and Collisions - Unity Game Development Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">Chapter 6</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html">📚 Introduction</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html">Ch 3: <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>s & Components</a></li>
+            <li><a href="chapter04.html">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html" class="active">Ch 6: <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+        <article class="chapter">
+            <header class="chapter-header">
+                <div class="chapter-number">Chapter 6</div>
+                <h1><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> and Collisions</h1>
+                <p class="chapter-description">Master Unity's physics system to create realistic movement, collisions, and interactive gameplay mechanics</p>
+            </header>
+
+            <section class="learning-objectives">
+                <h2>What You'll Learn</h2>
+                <ul>
+                    <li>Unity's built-in physics engine (Box2D for 2D, PhysX for 3D)</li>
+                    <li><a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> components and physics simulation</li>
+                    <li>Collision detection patterns and optimization</li>
+                    <li>Trigger zones and area-based interactions</li>
+                    <li><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> materials and surface properties</li>
+                    <li>Raycast and overlap queries for gameplay mechanics</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Understanding Unity's <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Architecture</h2>
+                
+                <p>Unity's physics system is fundamentally different from the deterministic, predictable logic you might be used to in backend development. While your server applications execute code in a controlled, sequential manner, physics simulations introduce elements of chaos, approximation, and frame-rate dependency that require a different mindset.</p>
+
+                <p>Think of Unity's physics engine as a specialized microservice running alongside your game logic. Just as you might use Redis for caching or PostgreSQL for persistence, Unity delegates physical interactions to dedicated physics engines: Box2D for 2D games and NVIDIA PhysX for 3D games. These engines run their own simulation loops, calculate forces and collisions, then report back to your game code.</p>
+
+                <div class="info-box">
+                    <h4>DevOps Perspective: <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> as a Service</h4>
+                    <p>Imagine physics simulation like a message queue system. Your <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>s publish "physics events" (movement requests, force applications), the physics engine processes these in batches during FixedUpdate intervals, then publishes results back through collision callbacks and transform updates. This asynchronous, event-driven model should feel familiar from distributed systems design.</p>
+                </div>
+
+                <p>The key difference is that physics calculations happen at fixed timesteps (typically 50Hz or 20ms intervals) regardless of your game's framerate. This ensures consistent behavior across different hardware, much like how you might use fixed time intervals in cron jobs or scheduled tasks to maintain predictable system behavior.</p>
+            </section>
+
+            <section>
+                <h2><a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> Components: The Foundation of <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a></h2>
+                
+                <p>In Unity, any <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> that needs to participate in physics simulation requires a <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> component. Think of <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> as the "service registration" that tells Unity's physics engine to include this object in its simulation loop. Without a <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>, a <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> with colliders acts like static geometry—it can detect collisions but won't respond to forces or gravity.</p>
+
+                <h3><a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> Types and Configuration</h3>
+                
+                <p>Unity provides three fundamental <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> modes, each serving different gameplay needs:</p>
+
+                <div class="code-example">
+                    <h4>Dynamic <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> Configuration</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+
+public class <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>ObjectController : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    private <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb;
+    
+    [Header("<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Properties")]
+    public float mass = 1f;
+    public float drag = 0f;           // Linear drag (air resistance)
+    public float angularDrag = 0.05f; // Rotational drag
+    public bool useGravity = true;
+    
+    void Start()
+    {
+        rb = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>&gt;();
+        Configure<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>();
+    }
+    
+    void Configure<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>()
+    {
+        // Configure mass - affects how forces influence the object
+        rb.mass = mass;
+        
+        // Drag values simulate air resistance and friction
+        rb.drag = drag;
+        rb.angularDrag = angularDrag;
+        
+        // Gravity participation
+        rb.useGravity = useGravity;
+        
+        // Constraint flags - prevent movement/rotation on specific axes
+        // Useful for 2.5D games or platform-specific controls
+        rb.constraints = <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Constraints.FreezeRotationX | 
+                        <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Constraints.FreezeRotationZ;
+    }
+    
+    // Apply forces during gameplay
+    public void ApplyJumpForce(float jumpPower)
+    {
+        // <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a> determines how force is applied
+        rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * jumpPower, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Impulse);
+    }
+    
+    public void ApplyMovementForce(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> direction, float force)
+    {
+        // Continuous force application (like thrusters)
+        rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>(direction * force, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Force);
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+
+                <h3>Force Modes: Understanding <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Impulses</h3>
+                
+                <p>Unity provides four <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a> options that determine how applied forces interact with mass and time. Understanding these modes is crucial for predictable physics behavior:</p>
+
+                <div class="code-example">
+                    <h4>Force Mode Comparison</h4>
+                    <pre><code class="language-csharp">public class <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>Examples : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    private <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb;
+    
+    void Start()
+    {
+        rb = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>&gt;();
+    }
+    
+    public void Demonstrate<a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>()
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> forceVector = <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * 100f;
+        
+        // <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Force: Continuous force affected by mass and time
+        // Good for: Thrusters, wind, magnetic forces
+        // Formula: acceleration = force / mass * deltaTime
+        rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>(forceVector, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Force);
+        
+        // <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Impulse: Instant force affected by mass
+        // Good for: Explosions, jumps, collisions
+        // Formula: velocity change = force / mass
+        rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>(forceVector, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Impulse);
+        
+        // <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Acceleration: Continuous force ignoring mass
+        // Good for: Gravity, uniform acceleration fields
+        // Formula: acceleration = force * deltaTime
+        rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>(forceVector, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Acceleration);
+        
+        // <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.VelocityChange: Instant force ignoring mass
+        // Good for: Teleportation, instant speed changes
+        // Formula: velocity change = force
+        rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>(forceVector, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.VelocityChange);
+    }
+    
+    // Practical example: Platform-specific jump mechanics
+    public void Jump(float jumpHeight, bool useRealistic<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> = true)
+    {
+        if (useRealistic<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>)
+        {
+            // Calculate required impulse for desired jump height
+            // <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> formula: v = sqrt(2 * g * h)
+            float jumpVelocity = <a href="https://docs.unity3d.com/ScriptReference/Mathf.Sqrt.html" target="_blank">Mathf.Sqrt</a>(2f * <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.gravity.magnitude * jumpHeight);
+            rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * jumpVelocity, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.VelocityChange);
+        }
+        else
+        {
+            // Simple impulse-based jump
+            rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * jumpHeight, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Impulse);
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Performance Consideration: FixedUpdate vs Update</h4>
+                    <p><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> calculations happen during FixedUpdate cycles, not Update cycles. Apply forces in FixedUpdate() to ensure consistent behavior regardless of framerate. Think of this like database transaction boundaries—physics operations need to happen within the simulation's "transaction scope" to maintain consistency.</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Collision Detection: Events and Optimization</h2>
+                
+                <p>Unity's collision system operates through an event-driven callback model, similar to webhook systems in web development. When physics objects interact, Unity fires collision events that your scripts can listen to and respond to accordingly.</p>
+
+                <h3>Collision Event Lifecycle</h3>
+                
+                <p>Unity provides three collision callback methods that correspond to different phases of object interaction. These callbacks fire automatically when appropriately configured <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>s collide:</p>
+
+                <div class="code-example">
+                    <h4>Comprehensive Collision Handler</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+
+public class CollisionEventHandler : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Collision Settings")]
+    public <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a> interactionLayers = -1;
+    public bool logCollisionDetails = false;
+    
+    // Track ongoing collisions for state management
+    private HashSet&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>&gt; currentCollisions = new HashSet&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>&gt;();
+    private Dictionary&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>, float&gt; collisionStartTimes = new Dictionary&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>, float&gt;();
+    
+    // Collision Events - fired for <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>-to-<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> interactions
+    void OnCollisionEnter(Collision collision)
+    {
+        // Initial contact between objects
+        <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> other = collision.gameObject;
+        
+        if (!ShouldProcessCollision(other)) return;
+        
+        // Track collision state
+        currentCollisions.Add(other);
+        collisionStartTimes[other] = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+        
+        if (logCollisionDetails)
+        {
+            LogCollisionDetails("ENTER", collision);
+        }
+        
+        // Handle specific collision logic
+        HandleCollisionStart(collision);
+    }
+    
+    void OnCollisionStay(Collision collision)
+    {
+        // Continuous contact between objects (called every FixedUpdate)
+        <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> other = collision.gameObject;
+        
+        if (!ShouldProcessCollision(other)) return;
+        
+        // Calculate collision duration
+        float duration = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - collisionStartTimes.GetValueOrDefault(other, <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>);
+        
+        // Handle ongoing collision effects
+        HandleCollisionContinuous(collision, duration);
+    }
+    
+    void OnCollisionExit(Collision collision)
+    {
+        // Objects no longer in contact
+        <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> other = collision.gameObject;
+        
+        if (!ShouldProcessCollision(other)) return;
+        
+        // Clean up collision tracking
+        currentCollisions.Remove(other);
+        collisionStartTimes.Remove(other);
+        
+        // Handle collision end logic
+        HandleCollisionEnd(collision);
+    }
+    
+    // Layer-based collision filtering
+    bool ShouldProcessCollision(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> other)
+    {
+        int otherLayer = 1 &lt;&lt; other.layer;
+        return (interactionLayers.value &amp; otherLayer) != 0;
+    }
+    
+    void HandleCollisionStart(Collision collision)
+    {
+        // Example: Damage calculation based on collision force
+        float impactMagnitude = collision.relativeVelocity.magnitude;
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> impactPoint = collision.contacts[0].point;
+        
+        // Get components for interaction
+        var healthComponent = collision.gameObject.<a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;HealthSystem&gt;();
+        var audioSource = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;<a href="https://docs.unity3d.com/ScriptReference/AudioSource.html" target="_blank">AudioSource</a>&gt;();
+        
+        if (healthComponent != null &amp;&amp; impactMagnitude &gt; 5f)
+        {
+            float damage = impactMagnitude * 2f;
+            healthComponent.TakeDamage(damage);
+        }
+        
+        // Play impact sound based on surface material
+        if (audioSource != null)
+        {
+            PlayImpactSound(collision.contacts[0].this<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>.material, impactMagnitude);
+        }
+    }
+    
+    void HandleCollisionContinuous(Collision collision, float duration)
+    {
+        // Example: Pressure plates, damage over time
+        if (collision.gameObject.CompareTag("Player") &amp;&amp; duration &gt; 1f)
+        {
+            // Activate pressure sensitive mechanisms
+            ActivatePressurePlate();
+        }
+    }
+    
+    void HandleCollisionEnd(Collision collision)
+    {
+        // Example: Cleanup effects, state reset
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            DeactivatePressurePlate();
+        }
+    }
+    
+    void LogCollisionDetails(string phase, Collision collision)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>($"Collision {phase}: {gameObject.name} with {collision.gameObject.name}");
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>($"Impact velocity: {collision.relativeVelocity.magnitude:F2}");
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>($"Contact points: {collision.contacts.Length}");
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>($"Contact normal: {collision.contacts[0].normal}");
+    }
+    
+    // Helper methods (implement based on your game needs)
+    void PlayImpactSound(<a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a> material, float magnitude) { /* Implementation */ }
+    void ActivatePressurePlate() { /* Implementation */ }
+    void DeactivatePressurePlate() { /* Implementation */ }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+
+                <h3>Trigger Events: Area-Based Interactions</h3>
+                
+                <p>Triggers represent a special category of colliders that detect overlaps without causing physical collisions. Think of triggers as "sensor zones" that can detect when objects enter, stay within, or exit specific areas. This pattern is invaluable for game mechanics like pickup collection, area effects, or checkpoint systems.</p>
+
+                <div class="code-example">
+                    <h4>Advanced Trigger Zone System</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine.Events;
+
+public class TriggerZoneManager : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Trigger Configuration")]
+    public <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a> triggerLayers = -1;
+    public bool require<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> = true;
+    public float cooldownTime = 0.1f;
+    
+    [Header("Zone Behavior")]
+    public bool allowMultipleEntities = true;
+    public int maxEntities = 10;
+    
+    [Header("Events")]
+    public UnityEvent&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>&gt; OnEntityEnter;
+    public UnityEvent&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>&gt; OnEntityExit;
+    public UnityEvent&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>, float&gt; OnEntityStayUpdate;
+    
+    // Entity tracking
+    private HashSet&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>&gt; entitiesInZone = new HashSet&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>&gt;();
+    private Dictionary&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>, float&gt; entityEnterTimes = new Dictionary&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>, float&gt;();
+    private Dictionary&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>, float&gt; lastTriggerTimes = new Dictionary&lt;<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>, float&gt;();
+    
+    // Trigger Events - fired for any collider overlap
+    void OnTriggerEnter(<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> other)
+    {
+        if (!ShouldProcessTrigger(other.gameObject)) return;
+        
+        // Cooldown check to prevent rapid fire events
+        if (IsOnCooldown(other.gameObject)) return;
+        
+        // Capacity check
+        if (!allowMultipleEntities &amp;&amp; entitiesInZone.Count &gt; 0) return;
+        if (entitiesInZone.Count &gt;= maxEntities) return;
+        
+        // Add to tracking
+        entitiesInZone.Add(other.gameObject);
+        entityEnterTimes[other.gameObject] = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+        lastTriggerTimes[other.gameObject] = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+        
+        // Fire event
+        OnEntityEnter?.Invoke(other.gameObject);
+        
+        // Handle specific trigger logic
+        HandleTriggerEnter(other.gameObject);
+    }
+    
+    void OnTriggerStay(<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> other)
+    {
+        if (!entitiesInZone.Contains(other.gameObject)) return;
+        
+        // Calculate stay duration
+        float stayDuration = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - entityEnterTimes[other.gameObject];
+        
+        // Fire periodic update event
+        OnEntityStayUpdate?.Invoke(other.gameObject, stayDuration);
+        
+        // Handle continuous trigger effects
+        HandleTriggerStay(other.gameObject, stayDuration);
+    }
+    
+    void OnTriggerExit(<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> other)
+    {
+        if (!entitiesInZone.Contains(other.gameObject)) return;
+        
+        // Remove from tracking
+        entitiesInZone.Remove(other.gameObject);
+        entityEnterTimes.Remove(other.gameObject);
+        
+        // Fire event
+        OnEntityExit?.Invoke(other.gameObject);
+        
+        // Handle trigger exit logic
+        HandleTriggerExit(other.gameObject);
+    }
+    
+    bool ShouldProcessTrigger(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> obj)
+    {
+        // Layer mask check
+        int objLayer = 1 &lt;&lt; obj.layer;
+        if ((triggerLayers.value &amp; objLayer) == 0) return false;
+        
+        // <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> requirement check
+        if (require<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> &amp;&amp; obj.<a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>&gt;() == null) return false;
+        
+        return true;
+    }
+    
+    bool IsOnCooldown(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> obj)
+    {
+        if (!lastTriggerTimes.ContainsKey(obj)) return false;
+        return <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - lastTriggerTimes[obj] &lt; cooldownTime;
+    }
+    
+    // Specific trigger implementations
+    void HandleTriggerEnter(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> entity)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>($"Entity {entity.name} entered trigger zone");
+        
+        // Example: Pickup collection
+        if (entity.CompareTag("Player"))
+        {
+            var pickup = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;PickupItem&gt;();
+            if (pickup != null)
+            {
+                pickup.Collect(entity);
+            }
+        }
+        
+        // Example: Enemy AI activation
+        if (entity.CompareTag("Player"))
+        {
+            NotifyEnemiesPlayerEntered();
+        }
+    }
+    
+    void HandleTriggerStay(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> entity, float duration)
+    {
+        // Example: Healing zone
+        if (entity.CompareTag("Player") &amp;&amp; duration &gt; 1f)
+        {
+            var health = entity.<a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;HealthSystem&gt;();
+            if (health != null &amp;&amp; health.CanHeal())
+            {
+                health.Heal(<a href="https://docs.unity3d.com/ScriptReference/Time-deltaTime.html" target="_blank">Time.deltaTime</a> * 10f); // 10 HP per second
+            }
+        }
+        
+        // Example: Environmental effects
+        ApplyEnvironmentalEffects(entity, duration);
+    }
+    
+    void HandleTriggerExit(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> entity)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" target="_blank">Debug.Log</a>($"Entity {entity.name} left trigger zone");
+        
+        // Example: Remove buffs/debuffs
+        RemoveZoneEffects(entity);
+    }
+    
+    // Public API for external systems
+    public bool IsEntityInZone(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> entity)
+    {
+        return entitiesInZone.Contains(entity);
+    }
+    
+    public int GetEntityCount()
+    {
+        return entitiesInZone.Count;
+    }
+    
+    public <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>[] GetEntitiesInZone()
+    {
+        var entities = new <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>[entitiesInZone.Count];
+        entitiesInZone.CopyTo(entities);
+        return entities;
+    }
+    
+    // Helper methods (implement based on game requirements)
+    void NotifyEnemiesPlayerEntered() { /* Implementation */ }
+    void ApplyEnvironmentalEffects(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> entity, float duration) { /* Implementation */ }
+    void RemoveZoneEffects(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> entity) { /* Implementation */ }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Materials: Surface Properties</h2>
+                
+                <p><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Materials in Unity define how surfaces interact during collisions, similar to how you might configure caching headers or rate limiting rules for different API endpoints. These materials encapsulate properties like friction, bounciness, and combining behaviors that determine how objects slide, bounce, or stick when they collide.</p>
+
+                <h3>Creating and Configuring <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Materials</h3>
+
+                <div class="code-example">
+                    <h4><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Material Configuration Script</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+
+[CreateAssetMenu(fileName = "Custom <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Material", menuName = "<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>/<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Material")]
+public class Custom<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>Material : <a href="https://docs.unity3d.com/ScriptReference/ScriptableObject.html" target="_blank">ScriptableObject</a>
+{
+    [Header("Friction Properties")]
+    [Range(0f, 1f)]
+    public float staticFriction = 0.6f;    // Resistance to starting movement
+    
+    [Range(0f, 1f)]
+    public float dynamicFriction = 0.6f;   // Resistance while sliding
+    
+    [Header("Bounce Properties")]
+    [Range(0f, 1f)]
+    public float bounciness = 0f;          // Energy retained after collision
+    
+    [Header("Combine Modes")]
+    public <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a>Combine frictionCombine = <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a>Combine.Average;
+    public <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a>Combine bounceCombine = <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a>Combine.Average;
+    
+    // Create Unity <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a> from our configuration
+    public <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a> CreateUnityMaterial()
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a> material = new <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a>(name);
+        material.staticFriction = staticFriction;
+        material.dynamicFriction = dynamicFriction;
+        material.bounciness = bounciness;
+        material.frictionCombine = frictionCombine;
+        material.bounceCombine = bounceCombine;
+        
+        return material;
+    }
+}
+
+// Runtime physics material manager
+public class <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>MaterialManager : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [System.Serializable]
+    public class SurfaceType
+    {
+        public string name;
+        public <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a> material;
+        public AudioClip[] impactSounds;
+        public ParticleSystem impactEffect;
+        
+        [Header("Material Properties")]
+        [Range(0f, 2f)] public float staticFriction = 0.6f;
+        [Range(0f, 2f)] public float dynamicFriction = 0.6f;
+        [Range(0f, 1f)] public float bounciness = 0f;
+    }
+    
+    [Header("Predefined Surface Types")]
+    public SurfaceType[] surfaceTypes;
+    
+    void Start()
+    {
+        CreatePredefinedMaterials();
+    }
+    
+    void CreatePredefinedMaterials()
+    {
+        // Ice - very slippery, no bounce
+        CreateSurfaceMaterial("Ice", 0.02f, 0.02f, 0f);
+        
+        // Rubber - high friction, very bouncy
+        CreateSurfaceMaterial("Rubber", 1.0f, 1.0f, 0.9f);
+        
+        // Metal - medium friction, some bounce
+        CreateSurfaceMaterial("Metal", 0.4f, 0.3f, 0.2f);
+        
+        // Wood - decent friction, low bounce
+        CreateSurfaceMaterial("Wood", 0.7f, 0.5f, 0.1f);
+        
+        // Mud - high friction, no bounce, energy absorption
+        CreateSurfaceMaterial("Mud", 1.5f, 1.2f, 0f);
+    }
+    
+    <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a> CreateSurfaceMaterial(string materialName, float staticFriction, 
+                                       float dynamicFriction, float bounciness)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a> material = new <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a>(materialName);
+        material.staticFriction = staticFriction;
+        material.dynamicFriction = dynamicFriction;
+        material.bounciness = bounciness;
+        
+        // Configure combine modes for realistic interactions
+        material.frictionCombine = <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a>Combine.Multiply;
+        material.bounceCombine = <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a>Combine.Average;
+        
+        return material;
+    }
+    
+    // Runtime material switching for dynamic surfaces
+    public void ApplyMaterialTo<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>(<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> collider, string materialName)
+    {
+        foreach (var surface in surfaceTypes)
+        {
+            if (surface.name == materialName)
+            {
+                collider.material = surface.material;
+                return;
+            }
+        }
+        
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.LogWarning.html" target="_blank">Debug.LogWarning</a>($"<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> material '{materialName}' not found!");
+    }
+    
+    // Get material properties for gameplay effects
+    public SurfaceType GetSurfaceType(<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> collider)
+    {
+        if (collider.material == null) return null;
+        
+        foreach (var surface in surfaceTypes)
+        {
+            if (surface.material == collider.material)
+            {
+                return surface;
+            }
+        }
+        
+        return null;
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+
+                <div class="info-box">
+                    <h4>Combine Modes: <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Material Interaction</h4>
+                    <p><strong>Average:</strong> (mat1 + mat2) / 2 - Smooth blending between materials</p>
+                    <p><strong>Multiply:</strong> mat1 × mat2 - Realistic interaction (ice on ice = very slippery)</p>
+                    <p><strong>Minimum:</strong> min(mat1, mat2) - Most slippery/least bouncy wins</p>
+                    <p><strong>Maximum:</strong> max(mat1, mat2) - Most grippy/most bouncy wins</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Raycast and <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Queries</h2>
+                
+                <p>Raycasting in Unity is like sending HTTP requests to the physics world—you query for information about what exists in 3D space without actually moving or affecting objects. This is invaluable for mechanics like line-of-sight detection, ground checking, weapon firing, and AI pathfinding.</p>
+
+                <h3>Advanced Raycast Techniques</h3>
+
+                <div class="code-example">
+                    <h4>Comprehensive Raycast System</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+
+public class RaycastManager : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Raycast Configuration")]
+    public <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a> raycastLayers = -1;
+    public QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.UseGlobal;
+    public bool drawDebugRays = true;
+    public float debugRayDuration = 2f;
+    
+    // Basic raycast with comprehensive information gathering
+    public RaycastHit? PerformRaycast(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> origin, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> direction, float maxDistance)
+    {
+        RaycastHit hit;
+        bool hasHit = <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.Raycast(origin, direction, out hit, maxDistance, raycastLayers, triggerInteraction);
+        
+        if (drawDebugRays)
+        {
+            Color rayColor = hasHit ? Color.red : Color.green;
+            float rayLength = hasHit ? hit.distance : maxDistance;
+            <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawRay.html" target="_blank">Debug.DrawRay</a>(origin, direction * rayLength, rayColor, debugRayDuration);
+        }
+        
+        return hasHit ? hit : (RaycastHit?)null;
+    }
+    
+    // Multi-raycast for more detailed scene analysis
+    public RaycastHit[] PerformRaycastAll(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> origin, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> direction, float maxDistance)
+    {
+        RaycastHit[] hits = <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.RaycastAll(origin, direction, maxDistance, raycastLayers, triggerInteraction);
+        
+        if (drawDebugRays)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawRay.html" target="_blank">Debug.DrawRay</a>(origin, direction * maxDistance, Color.blue, debugRayDuration);
+            
+            // Draw hit points
+            foreach (var hit in hits)
+            {
+                <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawWireSphere.html" target="_blank">Debug.DrawWireSphere</a>(hit.point, 0.1f, Color.yellow, debugRayDuration);
+            }
+        }
+        
+        return hits;
+    }
+    
+    // Ground detection for player controllers
+    public bool IsGrounded(<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a> object<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>, float checkDistance = 0.1f, float raycastWidth = 0.8f)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> origin = object<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>.position;
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> direction = <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.down;
+        
+        // Center raycast
+        bool centerHit = <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.Raycast(origin, direction, checkDistance, raycastLayers);
+        
+        // Corner raycasts for more stable ground detection
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>[] corners = {
+            origin + object<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>.right * raycastWidth * 0.5f,
+            origin - object<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>.right * raycastWidth * 0.5f,
+            origin + object<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>.forward * raycastWidth * 0.5f,
+            origin - object<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>.forward * raycastWidth * 0.5f
+        };
+        
+        int groundHits = centerHit ? 1 : 0;
+        
+        foreach (<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> corner in corners)
+        {
+            if (<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.Raycast(corner, direction, checkDistance, raycastLayers))
+            {
+                groundHits++;
+            }
+            
+            if (drawDebugRays)
+            {
+                <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawRay.html" target="_blank">Debug.DrawRay</a>(corner, direction * checkDistance, Color.cyan, debugRayDuration);
+            }
+        }
+        
+        // Require at least 2 raycasts to hit for stable grounding
+        return groundHits &gt;= 2;
+    }
+    
+    // Wall detection for movement systems
+    public <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>? DetectWall(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> origin, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> moveDirection, float checkDistance)
+    {
+        RaycastHit hit;
+        bool hasWall = <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.Raycast(origin, moveDirection, out hit, checkDistance, raycastLayers);
+        
+        if (hasWall)
+        {
+            if (drawDebugRays)
+            {
+                <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawRay.html" target="_blank">Debug.DrawRay</a>(origin, moveDirection * hit.distance, Color.magenta, debugRayDuration);
+                <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawRay.html" target="_blank">Debug.DrawRay</a>(hit.point, hit.normal * 0.5f, Color.yellow, debugRayDuration);
+            }
+            
+            return hit.normal; // Return wall surface normal
+        }
+        
+        return null;
+    }
+    
+    // Line of sight checking for AI systems
+    public bool HasLineOfSight(<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a> observer, <a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a> target, float maxDistance = 50f)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> observerEye = observer.position + <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * 1.6f; // Eye level
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> targetCenter = target.position + <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * 0.9f;   // Center mass
+        
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> direction = (targetCenter - observerEye).normalized;
+        float distance = <a href="https://docs.unity3d.com/ScriptReference/Vector3.Distance.html" target="_blank">Vector3.Distance</a>(observerEye, targetCenter);
+        
+        // Clamp to max distance
+        distance = <a href="https://docs.unity3d.com/ScriptReference/Mathf.Min.html" target="_blank">Mathf.Min</a>(distance, maxDistance);
+        
+        RaycastHit hit;
+        bool hasObstacle = <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.Raycast(observerEye, direction, out hit, distance, raycastLayers);
+        
+        if (drawDebugRays)
+        {
+            Color rayColor = (!hasObstacle || hit.collider.transform == target) ? Color.green : Color.red;
+            <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawRay.html" target="_blank">Debug.DrawRay</a>(observerEye, direction * distance, rayColor, debugRayDuration);
+        }
+        
+        // Line of sight is clear if no obstacle hit, or the hit object is the target
+        return !hasObstacle || hit.collider.transform == target;
+    }
+    
+    // Sphere cast for thicker collision detection
+    public bool SphereCast(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> origin, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> direction, float radius, float maxDistance, out RaycastHit hit)
+    {
+        bool hasHit = <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.SphereCast(origin, radius, direction, out hit, maxDistance, raycastLayers);
+        
+        if (drawDebugRays)
+        {
+            // Draw sphere at origin and end position
+            DebugDrawSphere(origin, radius, Color.blue, debugRayDuration);
+            
+            <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> endPos = hasHit ? origin + direction * hit.distance : origin + direction * maxDistance;
+            DebugDrawSphere(endPos, radius, hasHit ? Color.red : Color.green, debugRayDuration);
+            
+            // Draw connecting line
+            <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawLine.html" target="_blank">Debug.DrawLine</a>(origin, endPos, Color.white, debugRayDuration);
+        }
+        
+        return hasHit;
+    }
+    
+    // Overlap detection for area queries
+    public <a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>[] OverlapSphere(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> center, float radius)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>[] overlapping = <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.OverlapSphere(center, radius, raycastLayers, triggerInteraction);
+        
+        if (drawDebugRays)
+        {
+            DebugDrawSphere(center, radius, Color.yellow, debugRayDuration);
+        }
+        
+        return overlapping;
+    }
+    
+    // Helper method for drawing debug spheres
+    void DebugDrawSphere(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> center, float radius, Color color, float duration)
+    {
+        // Draw sphere approximation with circles
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.html" target="_blank">Debug</a>.DrawCircle(center, radius, color, duration, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up);
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.html" target="_blank">Debug</a>.DrawCircle(center, radius, color, duration, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.right);
+        <a href="https://docs.unity3d.com/ScriptReference/Debug.html" target="_blank">Debug</a>.DrawCircle(center, radius, color, duration, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.forward);
+    }
+}
+
+// Extension method for <a href="https://docs.unity3d.com/ScriptReference/Debug.html" target="_blank">Debug</a>.DrawCircle (add to a utility class)
+public static class DebugExtensions
+{
+    public static void DrawCircle(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> center, float radius, Color color, float duration, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> normal)
+    {
+        int segments = 16;
+        float angleStep = 360f / segments;
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> previousPoint = <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.zero;
+        
+        for (int i = 0; i &lt;= segments; i++)
+        {
+            float angle = i * angleStep * <a href="https://docs.unity3d.com/ScriptReference/Mathf.Deg2Rad.html" target="_blank">Mathf.Deg2Rad</a>;
+            <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> localPoint = new <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>(<a href="https://docs.unity3d.com/ScriptReference/Mathf.Cos.html" target="_blank">Mathf.Cos</a>(angle), 0, <a href="https://docs.unity3d.com/ScriptReference/Mathf.Sin.html" target="_blank">Mathf.Sin</a>(angle)) * radius;
+            
+            // Rotate based on normal
+            if (normal != <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up)
+            {
+                localPoint = <a href="https://docs.unity3d.com/ScriptReference/Quaternion.FromToRotation.html" target="_blank">Quaternion.FromToRotation</a>(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up, normal) * localPoint;
+            }
+            
+            <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> worldPoint = center + localPoint;
+            
+            if (i &gt; 0)
+            {
+                <a href="https://docs.unity3d.com/ScriptReference/Debug.DrawLine.html" target="_blank">Debug.DrawLine</a>(previousPoint, worldPoint, color, duration);
+            }
+            
+            previousPoint = worldPoint;
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+
+                <h3>Practical Raycast Applications</h3>
+
+                <div class="code-example">
+                    <h4>Weapon System with Hitscan</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.Events;
+
+public class HitscanWeapon : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Weapon Configuration")]
+    public float damage = 25f;
+    public float maxRange = 100f;
+    public float fireRate = 600f; // Rounds per minute
+    public int pelletCount = 1;   // For shotguns
+    public float spreadAngle = 0f; // Bullet spread in degrees
+    
+    [Header("Targeting")]
+    public <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a> targetLayers = -1;
+    public <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a> obstacleLayers = -1;
+    
+    [Header("Effects")]
+    public ParticleSystem muzzleFlash;
+    public LineRenderer tracerLine;
+    public ParticleSystem impactEffect;
+    public <a href="https://docs.unity3d.com/ScriptReference/AudioSource.html" target="_blank">AudioSource</a> audioSource;
+    
+    [Header("Events")]
+    public UnityEvent&lt;RaycastHit&gt; OnTargetHit;
+    public UnityEvent OnWeaponFired;
+    
+    private float lastFireTime;
+    private RaycastManager raycastManager;
+    
+    void Start()
+    {
+        raycastManager = FindObjectOfType&lt;RaycastManager&gt;();
+        if (raycastManager == null)
+        {
+            raycastManager = gameObject.AddComponent&lt;RaycastManager&gt;();
+        }
+    }
+    
+    public void FireWeapon()
+    {
+        if (!CanFire()) return;
+        
+        lastFireTime = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+        OnWeaponFired?.Invoke();
+        
+        // Fire multiple pellets for shotgun-style weapons
+        for (int i = 0; i &lt; pelletCount; i++)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> fireDirection = CalculateFireDirection();
+            ProcessHitscanShot(fireDirection);
+        }
+        
+        // Visual and audio effects
+        PlayMuzzleFlash();
+        PlayFireSound();
+    }
+    
+    bool CanFire()
+    {
+        float timeBetweenShots = 60f / fireRate;
+        return <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> &gt;= lastFireTime + timeBetweenShots;
+    }
+    
+    <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> CalculateFireDirection()
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> baseDirection = transform.forward;
+        
+        // Apply spread
+        if (spreadAngle &gt; 0f)
+        {
+            float randomX = <a href="https://docs.unity3d.com/ScriptReference/Random.Range.html" target="_blank">Random.Range</a>(-spreadAngle, spreadAngle);
+            float randomY = <a href="https://docs.unity3d.com/ScriptReference/Random.Range.html" target="_blank">Random.Range</a>(-spreadAngle, spreadAngle);
+            
+            <a href="https://docs.unity3d.com/ScriptReference/Quaternion.html" target="_blank">Quaternion</a> spread = <a href="https://docs.unity3d.com/ScriptReference/Quaternion.Euler.html" target="_blank">Quaternion.Euler</a>(randomX, randomY, 0);
+            baseDirection = spread * baseDirection;
+        }
+        
+        return baseDirection.normalized;
+    }
+    
+    void ProcessHitscanShot(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> direction)
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> origin = transform.position;
+        
+        // First, check for obstacles
+        RaycastHit? obstacleHit = raycastManager.PerformRaycast(origin, direction, maxRange);
+        
+        if (obstacleHit.HasValue)
+        {
+            RaycastHit hit = obstacleHit.Value;
+            
+            // Check if we hit a valid target
+            int hitLayer = 1 &lt;&lt; hit.collider.gameObject.layer;
+            bool isTarget = (targetLayers.value &amp; hitLayer) != 0;
+            bool isObstacle = (obstacleLayers.value &amp; hitLayer) != 0;
+            
+            if (isTarget)
+            {
+                ProcessTargetHit(hit);
+            }
+            else if (isObstacle)
+            {
+                ProcessObstacleHit(hit);
+            }
+            
+            // Visual effects at hit point
+            CreateImpactEffect(hit.point, hit.normal);
+            
+            // Draw tracer line if configured
+            if (tracerLine != null)
+            {
+                StartCoroutine(DrawTracerLine(origin, hit.point));
+            }
+        }
+        else
+        {
+            // No hit - show tracer to max range
+            if (tracerLine != null)
+            {
+                <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> endPoint = origin + direction * maxRange;
+                StartCoroutine(DrawTracerLine(origin, endPoint));
+            }
+        }
+    }
+    
+    void ProcessTargetHit(RaycastHit hit)
+    {
+        // Apply damage
+        var healthComponent = hit.collider.<a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;HealthSystem&gt;();
+        if (healthComponent != null)
+        {
+            // Calculate damage modifiers (headshots, armor, etc.)
+            float finalDamage = CalculateDamage(hit);
+            healthComponent.TakeDamage(finalDamage);
+        }
+        
+        // Apply physics force
+        var rigidbody = hit.collider.<a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>&gt;();
+        if (rigidbody != null)
+        {
+            float force = damage * 10f;
+            rigidbody.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.AddForce.html" target="_blank">AddForce</a>AtPosition(transform.forward * force, hit.point, <a href="https://docs.unity3d.com/ScriptReference/ForceMode.html" target="_blank">ForceMode</a>.Impulse);
+        }
+        
+        OnTargetHit?.Invoke(hit);
+    }
+    
+    void ProcessObstacleHit(RaycastHit hit)
+    {
+        // Create surface-appropriate effects
+        var surface = hit.collider.<a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;SurfaceProperties&gt;();
+        if (surface != null)
+        {
+            surface.ProcessBulletImpact(hit.point, hit.normal);
+        }
+    }
+    
+    float CalculateDamage(RaycastHit hit)
+    {
+        float baseDamage = damage;
+        
+        // Distance falloff
+        float distance = <a href="https://docs.unity3d.com/ScriptReference/Vector3.Distance.html" target="_blank">Vector3.Distance</a>(transform.position, hit.point);
+        float damageFalloff = <a href="https://docs.unity3d.com/ScriptReference/Mathf.Clamp01.html" target="_blank">Mathf.Clamp01</a>(1f - (distance / maxRange));
+        
+        // Critical hit detection (headshot multiplier)
+        if (hit.collider.CompareTag("Head"))
+        {
+            baseDamage *= 2f; // Double damage for headshots
+        }
+        
+        return baseDamage * damageFalloff;
+    }
+    
+    void CreateImpactEffect(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> position, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> normal)
+    {
+        if (impactEffect != null)
+        {
+            var effect = <a href="https://docs.unity3d.com/ScriptReference/Object.Instantiate.html" target="_blank">Instantiate</a>(impactEffect, position, <a href="https://docs.unity3d.com/ScriptReference/Quaternion.LookRotation.html" target="_blank">Quaternion.LookRotation</a>(normal));
+            <a href="https://docs.unity3d.com/ScriptReference/Object.Destroy.html" target="_blank">Destroy</a>(effect.gameObject, 2f);
+        }
+    }
+    
+    System.Collections.IEnumerator DrawTracerLine(<a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> start, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> end)
+    {
+        tracerLine.positionCount = 2;
+        tracerLine.SetPosition(0, start);
+        tracerLine.SetPosition(1, end);
+        tracerLine.enabled = true;
+        
+        yield return new WaitForSeconds(0.1f);
+        
+        tracerLine.enabled = false;
+    }
+    
+    void PlayMuzzleFlash()
+    {
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Play();
+        }
+    }
+    
+    void PlayFireSound()
+    {
+        if (audioSource != null &amp;&amp; audioSource.clip != null)
+        {
+            audioSource.PlayOneShot(audioSource.clip);
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Performance Optimization</h2>
+                
+                <p><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> calculations are computationally expensive, similar to database queries in web applications. Just as you wouldn't run unnecessary database operations, you should optimize physics interactions to maintain smooth gameplay performance.</p>
+
+                <h3><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Optimization Strategies</h3>
+
+                <div class="code-example">
+                    <h4><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Performance Manager</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+
+public class <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>OptimizationManager : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Performance Settings")]
+    public bool enableOptimizations = true;
+    public float cullingDistance = 50f;
+    public int maxActiveRigidbodies = 100;
+    public float sleepThreshold = 0.1f;
+    
+    [Header("Debug Info")]
+    public bool showPerformanceStats = true;
+    
+    private List&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>&gt; managedRigidbodies = new List&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>&gt;();
+    private List&lt;<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>&gt; managed<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>s = new List&lt;<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>&gt;();
+    private <a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a> player<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>;
+    
+    // Performance tracking
+    private int framesSinceLastOptimization = 0;
+    private const int optimizationInterval = 30; // Every 30 frames
+    
+    void Start()
+    {
+        // Find player for distance-based optimizations
+        <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> player = <a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>.Find<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a>WithTag("Player");
+        if (player != null)
+        {
+            player<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a> = player.transform;
+        }
+        
+        // Register all existing rigidbodies
+        RegisterAllRigidbodies();
+        
+        // Configure global physics settings
+        Optimize<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>Settings();
+    }
+    
+    void FixedUpdate()
+    {
+        if (!enableOptimizations) return;
+        
+        framesSinceLastOptimization++;
+        
+        if (framesSinceLastOptimization &gt;= optimizationInterval)
+        {
+            PerformOptimizationPass();
+            framesSinceLastOptimization = 0;
+        }
+    }
+    
+    void Optimize<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>Settings()
+    {
+        // Adjust global physics settings for better performance
+        <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.defaultSolverIterations = 6;      // Default: 6, Lower = faster but less stable
+        <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.defaultSolverVelocityIterations = 1; // Default: 1, Higher = more accurate
+        
+        // Set fixed timestep for consistent physics
+        <a href="https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html" target="_blank">Time.fixedDeltaTime</a> = 1f / 50f; // 50 Hz physics update rate
+        
+        // Configure sleep settings
+        <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.sleepThreshold = sleepThreshold;
+        
+        // Layer collision matrix optimization
+        OptimizeCollisionMatrix();
+    }
+    
+    void OptimizeCollisionMatrix()
+    {
+        // Disable unnecessary layer interactions
+        // Example: UI doesn't need to collide with anything except Player
+        int uiLayer = <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a>.NameToLayer("UI");
+        int playerLayer = <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a>.NameToLayer("Player");
+        int enemyLayer = <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a>.NameToLayer("Enemy");
+        
+        if (uiLayer != -1 &amp;&amp; enemyLayer != -1)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>.IgnoreLayerCollision(uiLayer, enemyLayer, true);
+        }
+        
+        // Add more layer optimizations based on your game's needs
+    }
+    
+    void RegisterAllRigidbodies()
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>[] allRigidbodies = FindObjectsOfType&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>&gt;();
+        managedRigidbodies.AddRange(allRigidbodies);
+        
+        <a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>[] all<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>s = FindObjectsOfType&lt;<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>&gt;();
+        managed<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>s.AddRange(all<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>s);
+        
+        Debug.Log($"<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Optimization Manager: Registered {managedRigidbodies.Count} rigidbodies and {managed<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>s.Count} colliders");
+    }
+    
+    void PerformOptimizationPass()
+    {
+        if (player<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a> == null) return;
+        
+        int activeBodies = 0;
+        int culledBodies = 0;
+        
+        foreach (<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb in managedRigidbodies)
+        {
+            if (rb == null) continue;
+            
+            float distanceToPlayer = <a href="https://docs.unity3d.com/ScriptReference/Vector3.Distance.html" target="_blank">Vector3.Distance</a>(rb.transform.position, player<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>.position);
+            
+            // Distance-based culling
+            if (distanceToPlayer &gt; cullingDistance)
+            {
+                OptimizeDistant<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>(rb);
+                culledBodies++;
+            }
+            else
+            {
+                Restore<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Optimization(rb);
+                activeBodies++;
+            }
+        }
+        
+        // Limit total active rigidbodies
+        if (activeBodies &gt; maxActiveRigidbodies)
+        {
+            LimitActiveRigidbodies();
+        }
+        
+        if (showPerformanceStats)
+        {
+            Debug.Log($"<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Optimization: {activeBodies} active, {culledBodies} culled");
+        }
+    }
+    
+    void OptimizeDistant<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>(<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb)
+    {
+        // Put distant objects to sleep to save CPU
+        if (!rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.IsSleeping.html" target="_blank">IsSleeping</a>() &amp;&amp; rb.velocity.magnitude &lt; sleepThreshold)
+        {
+            rb.Sleep();
+        }
+        
+        // Reduce physics complexity for distant objects
+        if (rb.interpolation != <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Interpolation.None)
+        {
+            rb.interpolation = <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Interpolation.None;
+        }
+    }
+    
+    void Restore<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Optimization(<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb)
+    {
+        // Restore full physics for nearby objects
+        if (rb.interpolation == <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Interpolation.None)
+        {
+            rb.interpolation = <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Interpolation.Interpolate;
+        }
+    }
+    
+    void LimitActiveRigidbodies()
+    {
+        // Sort by distance and deactivate furthest objects
+        var sortedBodies = new List&lt;System.Tuple&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>, float&gt;&gt;();
+        
+        foreach (<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb in managedRigidbodies)
+        {
+            if (rb == null || rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.IsSleeping.html" target="_blank">IsSleeping</a>()) continue;
+            
+            float distance = <a href="https://docs.unity3d.com/ScriptReference/Vector3.Distance.html" target="_blank">Vector3.Distance</a>(rb.transform.position, player<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>.position);
+            sortedBodies.Add(System.Tuple.Create(rb, distance));
+        }
+        
+        // Sort by distance (furthest first)
+        sortedBodies.Sort((a, b) =&gt; b.Item2.CompareTo(a.Item2));
+        
+        // Deactivate excess rigidbodies
+        int excess = sortedBodies.Count - maxActiveRigidbodies;
+        for (int i = 0; i &lt; excess; i++)
+        {
+            sortedBodies[i].Item1.Sleep();
+        }
+    }
+    
+    // Public API for external systems
+    public void Register<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>(<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb)
+    {
+        if (!managedRigidbodies.Contains(rb))
+        {
+            managedRigidbodies.Add(rb);
+        }
+    }
+    
+    public void Unregister<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>(<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb)
+    {
+        managedRigidbodies.Remove(rb);
+    }
+    
+    public void SetCullingDistance(float distance)
+    {
+        cullingDistance = distance;
+    }
+    
+    // Debug visualization
+    void OnDrawGizmosSelected()
+    {
+        if (player<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a> == null) return;
+        
+        // Draw culling radius
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(player<a href="https://docs.unity3d.com/ScriptReference/Transform.html" target="_blank">Transform</a>.position, cullingDistance);
+    }
+    
+    // Performance monitoring
+    void OnGUI()
+    {
+        if (!showPerformanceStats) return;
+        
+        GUI.Box(new Rect(10, 10, 200, 100), "<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Performance");
+        GUI.Label(new Rect(20, 30, 180, 20), $"Active Bodies: {GetActive<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Count()}");
+        GUI.Label(new Rect(20, 50, 180, 20), $"Sleeping Bodies: {GetSleeping<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Count()}");
+        GUI.Label(new Rect(20, 70, 180, 20), $"FPS: {1f / <a href="https://docs.unity3d.com/ScriptReference/Time-deltaTime.html" target="_blank">Time.deltaTime</a>:F0}");
+    }
+    
+    int GetActive<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Count()
+    {
+        int active = 0;
+        foreach (var rb in managedRigidbodies)
+        {
+            if (rb != null &amp;&amp; !rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.IsSleeping.html" target="_blank">IsSleeping</a>()) active++;
+        }
+        return active;
+    }
+    
+    int GetSleeping<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Count()
+    {
+        int sleeping = 0;
+        foreach (var rb in managedRigidbodies)
+        {
+            if (rb != null &amp;&amp; rb.<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.IsSleeping.html" target="_blank">IsSleeping</a>()) sleeping++;
+        }
+        return sleeping;
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Practical Exercise: <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>-Based Puzzle Mechanics</h2>
+                
+                <p>Let's create a practical example that combines collision detection, triggers, raycasting, and physics materials into a cohesive puzzle system. This exercise demonstrates how different physics concepts work together in real gameplay scenarios.</p>
+
+                <div class="code-example">
+                    <h4><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Puzzle System</h4>
+                    <pre><code class="language-csharp">using UnityEngine;
+using System.Collections.Generic;
+
+// Main puzzle controller that manages physics-based interactions
+public class <a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a>PuzzleController : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Puzzle Configuration")]
+    public PressurePlate[] pressurePlates;
+    public Door puzzleDoor;
+    public WeightedObject[] weightedObjects;
+    
+    [Header("Win Condition")]
+    public bool requireAllPlates = true;
+    public float solutionHoldTime = 2f;
+    
+    private float solutionStartTime = -1f;
+    private bool puzzleSolved = false;
+    
+    void Start()
+    {
+        // Register pressure plate events
+        foreach (var plate in pressurePlates)
+        {
+            plate.OnPlateActivated.AddListener(CheckPuzzleState);
+            plate.OnPlateDeactivated.AddListener(CheckPuzzleState);
+        }
+    }
+    
+    void CheckPuzzleState()
+    {
+        bool solutionMet = requireAllPlates ? AreAllPlatesActive() : IsAnyPlateActive();
+        
+        if (solutionMet &amp;&amp; !puzzleSolved)
+        {
+            if (solutionStartTime &lt; 0)
+            {
+                solutionStartTime = <a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a>;
+            }
+            else if (<a href="https://docs.unity3d.com/ScriptReference/Time-time.html" target="_blank">Time.time</a> - solutionStartTime &gt;= solutionHoldTime)
+            {
+                SolvePuzzle();
+            }
+        }
+        else
+        {
+            solutionStartTime = -1f;
+        }
+    }
+    
+    bool AreAllPlatesActive()
+    {
+        foreach (var plate in pressurePlates)
+        {
+            if (!plate.IsActivated()) return false;
+        }
+        return true;
+    }
+    
+    bool IsAnyPlateActive()
+    {
+        foreach (var plate in pressurePlates)
+        {
+            if (plate.IsActivated()) return true;
+        }
+        return false;
+    }
+    
+    void SolvePuzzle()
+    {
+        puzzleSolved = true;
+        puzzleDoor.OpenDoor();
+        
+        Debug.Log("<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> puzzle solved!");
+        
+        // Optional: Disable further interactions
+        foreach (var plate in pressurePlates)
+        {
+            plate.SetLocked(true);
+        }
+    }
+}
+
+// Pressure plate that responds to weight and physics objects
+[System.Serializable]
+public class PressurePlate : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Activation Settings")]
+    public float requiredWeight = 10f;
+    public <a href="https://docs.unity3d.com/ScriptReference/LayerMask.html" target="_blank">LayerMask</a> activationLayers = -1;
+    public bool require<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> = true;
+    
+    [Header("Visual Feedback")]
+    public float pressDepth = 0.1f;
+    public float animationSpeed = 5f;
+    public Color activeColor = Color.green;
+    public Color inactiveColor = Color.red;
+    
+    [Header("Events")]
+    public UnityEngine.Events.UnityEvent OnPlateActivated;
+    public UnityEngine.Events.UnityEvent OnPlateDeactivated;
+    
+    private List&lt;WeightedObject&gt; objectsOnPlate = new List&lt;WeightedObject&gt;();
+    private bool isActivated = false;
+    private bool isLocked = false;
+    private <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> originalPosition;
+    private Renderer plateRenderer;
+    private TriggerZoneManager triggerZone;
+    
+    void Start()
+    {
+        originalPosition = transform.position;
+        plateRenderer = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;Renderer&gt;();
+        triggerZone = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;TriggerZoneManager&gt;();
+        
+        // Configure trigger zone
+        if (triggerZone != null)
+        {
+            triggerZone.OnEntityEnter.AddListener(OnObjectEnterPlate);
+            triggerZone.OnEntityExit.AddListener(OnObjectExitPlate);
+        }
+        
+        UpdateVisualState();
+    }
+    
+    void Update()
+    {
+        if (!isLocked)
+        {
+            UpdatePlateState();
+            AnimatePlate();
+        }
+    }
+    
+    void OnObjectEnterPlate(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> obj)
+    {
+        var weightedObject = obj.<a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;WeightedObject&gt;();
+        if (weightedObject != null)
+        {
+            objectsOnPlate.Add(weightedObject);
+        }
+    }
+    
+    void OnObjectExitPlate(<a href="https://docs.unity3d.com/ScriptReference/GameObject.html" target="_blank">GameObject</a> obj)
+    {
+        var weightedObject = obj.<a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;WeightedObject&gt;();
+        if (weightedObject != null)
+        {
+            objectsOnPlate.Remove(weightedObject);
+        }
+    }
+    
+    void UpdatePlateState()
+    {
+        float totalWeight = CalculateTotalWeight();
+        bool shouldBeActive = totalWeight &gt;= requiredWeight;
+        
+        if (shouldBeActive != isActivated)
+        {
+            isActivated = shouldBeActive;
+            
+            if (isActivated)
+            {
+                OnPlateActivated?.Invoke();
+            }
+            else
+            {
+                OnPlateDeactivated?.Invoke();
+            }
+            
+            UpdateVisualState();
+        }
+    }
+    
+    float CalculateTotalWeight()
+    {
+        float total = 0f;
+        
+        // Remove null references
+        objectsOnPlate.RemoveAll(obj =&gt; obj == null);
+        
+        foreach (var obj in objectsOnPlate)
+        {
+            total += obj.GetWeight();
+        }
+        
+        return total;
+    }
+    
+    void AnimatePlate()
+    {
+        <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> targetPosition = isActivated ? 
+            originalPosition - <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * pressDepth : 
+            originalPosition;
+            
+        transform.position = <a href="https://docs.unity3d.com/ScriptReference/Vector3.Lerp.html" target="_blank">Vector3.Lerp</a>(transform.position, targetPosition, 
+                                        animationSpeed * <a href="https://docs.unity3d.com/ScriptReference/Time-deltaTime.html" target="_blank">Time.deltaTime</a>);
+    }
+    
+    void UpdateVisualState()
+    {
+        if (plateRenderer != null)
+        {
+            plateRenderer.material.color = isActivated ? activeColor : inactiveColor;
+        }
+    }
+    
+    public bool IsActivated() { return isActivated; }
+    public void SetLocked(bool locked) { isLocked = locked; }
+}
+
+// Weighted objects that can activate pressure plates
+public class WeightedObject : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Weight Properties")]
+    public float weight = 15f;
+    public bool use<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Mass = true;
+    
+    [Header("<a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Material")]
+    public <a href="https://docs.unity3d.com/ScriptReference/PhysicMaterial.html" target="_blank">PhysicMaterial</a> customMaterial;
+    
+    private <a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a> rb;
+    private <a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> col;
+    
+    void Start()
+    {
+        rb = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>&gt;();
+        col = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>&gt;();
+        
+        // Configure physics properties
+        if (rb != null &amp;&amp; use<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Mass)
+        {
+            rb.mass = weight / 10f; // Scale for realistic physics
+        }
+        
+        // Apply custom physics material
+        if (col != null &amp;&amp; customMaterial != null)
+        {
+            col.material = customMaterial;
+        }
+    }
+    
+    public float GetWeight()
+    {
+        if (use<a href="https://docs.unity3d.com/ScriptReference/Rigidbody.html" target="_blank">Rigidbody</a>Mass &amp;&amp; rb != null)
+        {
+            return rb.mass * 10f; // Convert back to weight units
+        }
+        return weight;
+    }
+    
+    // Visual weight indicator
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireCube(transform.position + <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * 0.5f, <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.one * 0.2f);
+        
+        #if UNITY_EDITOR
+        UnityEditor.Handles.Label(transform.position + <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * 0.7f, $"Weight: {GetWeight():F1}");
+        #endif
+    }
+}
+
+// Animated door that opens when puzzle is solved
+public class Door : <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" target="_blank">MonoBehaviour</a>
+{
+    [Header("Animation Settings")]
+    public float openAngle = 90f;
+    public float openSpeed = 2f;
+    public bool slideOpen = false;
+    public <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> slideDistance = <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a>.up * 3f;
+    
+    [Header("Audio")]
+    public <a href="https://docs.unity3d.com/ScriptReference/AudioSource.html" target="_blank">AudioSource</a> audioSource;
+    public AudioClip openSound;
+    
+    private bool isOpening = false;
+    private <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> originalPosition;
+    private <a href="https://docs.unity3d.com/ScriptReference/Quaternion.html" target="_blank">Quaternion</a> originalRotation;
+    private <a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> door<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>;
+    
+    void Start()
+    {
+        originalPosition = transform.position;
+        originalRotation = transform.rotation;
+        door<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> = <a href="https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html" target="_blank">GetComponent</a>&lt;<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>&gt;();
+    }
+    
+    void Update()
+    {
+        if (isOpening)
+        {
+            AnimateDoor();
+        }
+    }
+    
+    public void OpenDoor()
+    {
+        if (isOpening) return;
+        
+        isOpening = true;
+        
+        // Play sound effect
+        if (audioSource != null &amp;&amp; openSound != null)
+        {
+            audioSource.PlayOneShot(openSound);
+        }
+        
+        // Disable collision when door starts opening
+        if (door<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a> != null)
+        {
+            door<a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>.enabled = false;
+        }
+    }
+    
+    void AnimateDoor()
+    {
+        if (slideOpen)
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/Vector3.html" target="_blank">Vector3</a> targetPosition = originalPosition + slideDistance;
+            transform.position = <a href="https://docs.unity3d.com/ScriptReference/Vector3.Lerp.html" target="_blank">Vector3.Lerp</a>(transform.position, targetPosition, 
+                                            openSpeed * <a href="https://docs.unity3d.com/ScriptReference/Time-deltaTime.html" target="_blank">Time.deltaTime</a>);
+        }
+        else
+        {
+            <a href="https://docs.unity3d.com/ScriptReference/Quaternion.html" target="_blank">Quaternion</a> targetRotation = originalRotation * <a href="https://docs.unity3d.com/ScriptReference/Quaternion.Euler.html" target="_blank">Quaternion.Euler</a>(0, openAngle, 0);
+            transform.rotation = <a href="https://docs.unity3d.com/ScriptReference/Quaternion.Lerp.html" target="_blank">Quaternion.Lerp</a>(transform.rotation, targetRotation, 
+                                               openSpeed * <a href="https://docs.unity3d.com/ScriptReference/Time-deltaTime.html" target="_blank">Time.deltaTime</a>);
+        }
+    }
+}</code></pre>
+                    <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Key Takeaways</h2>
+                
+                <p>Unity's physics system provides a powerful foundation for creating interactive, dynamic gameplay experiences. By understanding the relationship between Rigidbodies, <a href="https://docs.unity3d.com/ScriptReference/Collider.html" target="_blank">Collider</a>s, Materials, and physics queries, you can build complex game mechanics that feel natural and responsive.</p>
+
+                <div class="info-box">
+                    <h4><a href="https://docs.unity3d.com/ScriptReference/Physics.html" target="_blank">Physics</a> Development Checklist</h4>
+                    <ul>
+                        <li>Use Rigidbodies sparingly—only for objects that need physics simulation</li>
+                        <li>Configure collision layers to prevent unnecessary physics calculations</li>
+                        <li>Implement object pooling for physics objects that spawn frequently</li>
+                        <li>Use triggers for detection zones, colliders for physical interactions</li>
+                        <li>Apply forces in FixedUpdate() for consistent physics behavior</li>
+                        <li>Cache physics queries and use appropriate force modes</li>
+                        <li>Profile physics performance regularly, especially on target hardware</li>
+                    </ul>
+                </div>
+
+                <p>The physics system becomes particularly powerful when combined with other Unity systems like animation, audio, and particle effects. In the next chapter, we'll explore Unity's UI system and learn how to create intuitive user interfaces that complement your physics-driven gameplay.</p>
+            </section>
+
+            <div class="chapter-nav">
+                <a href="chapter05.html" class="nav-button prev">← Previous: Input & Player Control</a>
+                <a href="chapter07.html" class="nav-button next">Next: UI & Canvas System →</a>
+            </div>
+        </article>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
