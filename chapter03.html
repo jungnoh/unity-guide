@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: GameObjects & Components - Unity Game Development Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">Chapter 3</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html">📚 Introduction</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html" class="active">Ch 3: GameObjects & Components</a></li>
+            <li><a href="chapter04.html">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html">Ch 6: Physics & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+            <h1>Chapter 3: GameObjects and Components</h1>
+            
+            <div class="learning-objectives">
+                <h3>Learning Objectives</h3>
+                <ul>
+                    <li>Understand Unity's Entity-Component-System (ECS) architecture and how it relates to modern software patterns</li>
+                    <li>Master GameObjects as the fundamental building blocks of Unity scenes</li>
+                    <li>Learn to compose complex behaviors using Unity's component system</li>
+                    <li>Create and manage Prefabs for reusable game objects</li>
+                    <li>Understand the Transform system for positioning and hierarchy</li>
+                    <li>Implement component communication patterns and best practices</li>
+                </ul>
+            </div>
+
+            <h2>3.1 Understanding Entity-Component-System Architecture</h2>
+            
+            <p>If you've worked with modern web frameworks like React or Vue, or if you've designed microservices architectures, you've already encountered the core principles that drive Unity's GameObject and Component system. Unity uses an Entity-Component-System (ECS) pattern that promotes composition over inheritance—a architectural approach that should feel familiar from contemporary software design principles.</p>
+
+            <p>In traditional object-oriented programming, you might create a class hierarchy where a <code>Player</code> class inherits from an <code>Actor</code> class, which inherits from a <code>GameObject</code> class. This approach quickly becomes rigid and unwieldy as your game grows in complexity. What happens when you need a <code>FlyingPlayer</code> that can also be an <code>Enemy</code>? Or a <code>DestructibleEnvironmentObject</code> that also needs <code>Player</code>-like movement capabilities?</p>
+
+            <p>Unity solves this problem by separating identity (the GameObject entity), data and behavior (Components), and logic processing (Systems). This is remarkably similar to how you might structure a microservices architecture where each service has a clear responsibility, or how React components compose functionality from smaller, reusable pieces.</p>
+
+            <div class="alert alert-info">
+                <h4>ECS Architecture Compared to Familiar Patterns</h4>
+                <p>Understanding Unity's ECS through the lens of architectural patterns you already know:</p>
+                <ul>
+                    <li><strong>Entity (GameObject)</strong> — Like a Docker container or React component instance, it provides identity and serves as a container for functionality</li>
+                    <li><strong>Components</strong> — Similar to microservices or React hooks, they encapsulate specific functionality that can be mixed and matched</li>
+                    <li><strong>Systems</strong> — Like orchestration layers or Redux reducers, they process entities based on their component composition</li>
+                </ul>
+            </div>
+
+            <h3>The Composition Over Inheritance Advantage</h3>
+
+            <p>In server-side development, you've likely encountered the problems with deep inheritance hierarchies—they become brittle, hard to test, and difficult to extend. Unity's component system solves these problems by allowing you to compose behavior from small, focused components rather than inheriting from monolithic base classes.</p>
+
+            <p>Consider building a game where you need objects that can move, take damage, and render graphics. In a traditional inheritance model, you'd need to carefully design your class hierarchy to avoid duplication and ensure all combinations are possible. With Unity's component system, you simply attach Movement, Health, and Renderer components to any GameObject that needs those capabilities.</p>
+
+            <div class="interactive-demo">
+                <h3>Component Composition Example</h3>
+                <p>Let's explore how the same GameObject can have completely different behaviors based on its component composition:</p>
+                <div class="demo-controls">
+                    <button class="demo-button" onclick="showComponentExample('player')">Player Setup</button>
+                    <button class="demo-button" onclick="showComponentExample('enemy')">Enemy Setup</button>
+                    <button class="demo-button" onclick="showComponentExample('pickup')">Pickup Setup</button>
+                    <button class="demo-button" onclick="showComponentExample('decoration')">Decoration Setup</button>
+                </div>
+                <div class="demo-output" id="componentOutput">
+                    Click a button to see different GameObject compositions
+                </div>
+            </div>
+
+            <h2>3.2 GameObjects: The Foundation of Unity Scenes</h2>
+
+            <p>A GameObject in Unity serves a role similar to a container in Docker or a component instance in React—it's a fundamental unit that can hold various pieces of functionality and be manipulated as a single entity. However, unlike containers or React components, GameObjects exist in 3D space and have built-in concepts of position, rotation, and scale that are managed through their Transform component.</p>
+
+            <p>Every GameObject in Unity has exactly one Transform component that cannot be removed. This Transform handles the object's position in the game world, its rotation, and its scale. Additionally, the Transform creates parent-child relationships between GameObjects, forming hierarchical structures that are crucial for organizing complex game objects and managing relative positioning.</p>
+
+            <p>When you create a GameObject through Unity's interface or through code, you're creating an empty container that can hold components. By itself, an empty GameObject is invisible and doesn't do anything—it's the components you add that give it behavior, appearance, and functionality.</p>
+
+            <div class="alert alert-success">
+                <h4>GameObject Lifecycle and Management</h4>
+                <p>GameObjects follow a predictable lifecycle that mirrors many of the patterns you've seen in other systems:</p>
+                <ul>
+                    <li><strong>Instantiation</strong> — GameObjects are created either through the Unity Editor or at runtime through scripting</li>
+                    <li><strong>Initialization</strong> — Components initialize in a specific order, calling their Awake() and Start() methods</li>
+                    <li><strong>Runtime</strong> — Components execute their Update() methods every frame while the GameObject is active</li>
+                    <li><strong>Cleanup</strong> — When destroyed, GameObjects call OnDestroy() on all components before being removed from memory</li>
+                </ul>
+            </div>
+
+            <h3>Creating and Managing GameObjects</h3>
+
+            <p>There are several ways to create GameObjects, each appropriate for different scenarios in your development workflow. Understanding when to use each method will help you write more maintainable and performant game code.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Creating GameObjects through code
+using UnityEngine;
+
+public class GameObjectCreationExamples : MonoBehaviour
+{
+    void Start()
+    {
+        // Method 1: Create an empty GameObject
+        GameObject emptyObject = new GameObject("MyEmptyObject");
+        
+        // Method 2: Create with a specific component
+        GameObject playerObject = new GameObject("Player");
+        playerObject.AddComponent&lt;Rigidbody2D&gt;();
+        playerObject.AddComponent&lt;SpriteRenderer&gt;();
+        
+        // Method 3: Instantiate from a prefab (covered later)
+        // GameObject instance = Instantiate(prefabReference);
+        
+        // Method 4: Find existing GameObjects
+        GameObject existingPlayer = GameObject.Find("Player");
+        GameObject[] allEnemies = GameObject.FindGameObjectsWithTag("Enemy");
+        
+        // Method 5: Create primitive objects for prototyping
+        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+    }
+}</code></pre>
+            </div>
+
+            <h3>GameObject Hierarchy and Transform Relationships</h3>
+
+            <p>One of Unity's most powerful features is its hierarchical GameObject system. Just as you might organize Docker containers within a stack or nest React components within each other, Unity GameObjects can form parent-child relationships that affect positioning, scaling, and lifecycle management.</p>
+
+            <p>When a GameObject becomes the child of another GameObject, its Transform values become relative to its parent's Transform. This means if you move a parent object, all of its children move with it. This relationship is essential for creating complex game objects like characters with equipment, vehicles with multiple parts, or UI elements that need to stay positioned relative to each other.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Working with Transform hierarchies
+using UnityEngine;
+
+public class HierarchyExample : MonoBehaviour
+{
+    void Start()
+    {
+        // Create a player GameObject
+        GameObject player = new GameObject("Player");
+        
+        // Create child objects for the player
+        GameObject body = new GameObject("Body");
+        GameObject weapon = new GameObject("Weapon");
+        GameObject healthBar = new GameObject("HealthBar");
+        
+        // Set up the hierarchy
+        body.transform.SetParent(player.transform);
+        weapon.transform.SetParent(player.transform);
+        healthBar.transform.SetParent(player.transform);
+        
+        // Position children relative to parent
+        body.transform.localPosition = Vector3.zero; // Center of player
+        weapon.transform.localPosition = new Vector3(0.5f, 0, 0); // Right of player
+        healthBar.transform.localPosition = new Vector3(0, 1.5f, 0); // Above player
+        
+        // When player moves, all children move with it
+        player.transform.position = new Vector3(10, 0, 5);
+        
+        // Access parent and children through Transform
+        Transform parentTransform = weapon.transform.parent;
+        int childCount = player.transform.childCount;
+        Transform firstChild = player.transform.GetChild(0);
+    }
+}</code></pre>
+            </div>
+
+            <h2>3.3 Components: Building Blocks of Functionality</h2>
+
+            <p>Components are where the real power of Unity's architecture becomes apparent. If GameObjects are containers, then Components are the specialized services that provide specific functionality. This is directly analogous to how you might structure a microservices architecture where each service handles a specific domain of functionality, or how React components encapsulate specific UI behavior and state.</p>
+
+            <p>Unity provides many built-in components that handle common game development tasks—rendering graphics, playing audio, detecting collisions, managing physics, and handling user input. Additionally, you can create custom components by writing scripts that inherit from MonoBehaviour, Unity's base class for custom game logic.</p>
+
+            <p>The key insight is that components should follow the Single Responsibility Principle. Each component should do one thing well, making your code more modular, testable, and reusable. This approach also makes it easier to reason about complex game objects because you can examine each aspect of their functionality in isolation.</p>
+
+            <h3>Essential Built-in Components</h3>
+
+            <p>Unity provides a comprehensive set of built-in components that handle the most common game development tasks. Understanding these components and knowing when to use them will save you from reinventing the wheel and help you build games more efficiently.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                <div class="alert alert-info">
+                    <h4>🎨 Rendering Components</h4>
+                    <p>These components control how GameObjects appear visually in your game world:</p>
+                    <ul>
+                        <li><strong>SpriteRenderer</strong> — Displays 2D images and sprites</li>
+                        <li><strong>MeshRenderer</strong> — Renders 3D models and geometries</li>
+                        <li><strong>Camera</strong> — Captures and displays the game world to players</li>
+                        <li><strong>Light</strong> — Provides illumination for 3D scenes</li>
+                    </ul>
+                </div>
+                <div class="alert alert-success">
+                    <h4>⚡ Physics Components</h4>
+                    <p>These components add physical properties and collision detection to GameObjects:</p>
+                    <ul>
+                        <li><strong>Rigidbody/Rigidbody2D</strong> — Adds physics properties like mass and gravity</li>
+                        <li><strong>Collider/Collider2D</strong> — Defines collision shapes for physics interactions</li>
+                        <li><strong>Joint</strong> — Connects multiple GameObjects with physics constraints</li>
+                        <li><strong>ConstantForce</strong> — Applies continuous forces like wind or magnetism</li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <h4>🔊 Audio Components</h4>
+                    <p>These components handle sound playback and audio effects:</p>
+                    <ul>
+                        <li><strong>AudioSource</strong> — Plays audio clips with 3D positioning</li>
+                        <li><strong>AudioListener</strong> — Receives audio from AudioSources (like microphone)</li>
+                        <li><strong>AudioFilter</strong> — Applies effects like echo or distortion</li>
+                        <li><strong>AudioMixer</strong> — Manages complex audio routing and mixing</li>
+                    </ul>
+                </div>
+                <div class="alert alert-danger">
+                    <h4>🎮 Interaction Components</h4>
+                    <p>These components handle user input and game interactions:</p>
+                    <ul>
+                        <li><strong>Button</strong> — Detects and responds to user clicks</li>
+                        <li><strong>Animator</strong> — Controls character and object animations</li>
+                        <li><strong>ParticleSystem</strong> — Creates visual effects like fire or explosions</li>
+                        <li><strong>Canvas</strong> — Container for UI elements</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Creating Custom Components</h3>
+
+            <p>While Unity's built-in components cover many common scenarios, the real power comes from creating custom components that implement your game's unique logic. Custom components are created by writing C# scripts that inherit from MonoBehaviour, Unity's base class that provides the component lifecycle methods and integration with Unity's systems.</p>
+
+            <p>When designing custom components, apply the same principles you use in other areas of software development—keep them focused, make them testable, and design clear interfaces for communication with other components. This approach will make your codebase more maintainable and allow you to compose complex behaviors from simple, well-understood pieces.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Example of a well-designed custom component
+using UnityEngine;
+
+[System.Serializable]
+public class HealthSettings
+{
+    [Range(1, 1000)]
+    public int maxHealth = 100;
+    public bool regenerateHealth = false;
+    [Range(0, 10)]
+    public float regenerationRate = 1.0f;
+}
+
+public class Health : MonoBehaviour
+{
+    [Header("Health Configuration")]
+    [SerializeField] private HealthSettings settings = new HealthSettings();
+    
+    [Header("Runtime Status")]
+    [SerializeField, ReadOnly] private int currentHealth;
+    
+    // Events for component communication
+    public System.Action&lt;int, int&gt; OnHealthChanged; // currentHealth, maxHealth
+    public System.Action OnDeath;
+    public System.Action OnHealthRestored;
+    
+    // Properties for controlled access
+    public int CurrentHealth =&gt; currentHealth;
+    public int MaxHealth =&gt; settings.maxHealth;
+    public float HealthPercentage =&gt; (float)currentHealth / settings.maxHealth;
+    public bool IsAlive =&gt; currentHealth &gt; 0;
+    
+    void Start()
+    {
+        // Initialize health to maximum
+        currentHealth = settings.maxHealth;
+        OnHealthChanged?.Invoke(currentHealth, settings.maxHealth);
+    }
+    
+    void Update()
+    {
+        // Handle health regeneration
+        if (settings.regenerateHealth && currentHealth &lt; settings.maxHealth && IsAlive)
+        {
+            RegenerateHealth();
+        }
+    }
+    
+    public void TakeDamage(int damage)
+    {
+        if (!IsAlive) return;
+        
+        int previousHealth = currentHealth;
+        currentHealth = Mathf.Max(0, currentHealth - damage);
+        
+        // Notify listeners of health change
+        if (currentHealth != previousHealth)
+        {
+            OnHealthChanged?.Invoke(currentHealth, settings.maxHealth);
+            
+            if (currentHealth &lt;= 0)
+            {
+                Die();
+            }
+        }
+    }
+    
+    public void RestoreHealth(int amount)
+    {
+        if (!IsAlive) return;
+        
+        int previousHealth = currentHealth;
+        currentHealth = Mathf.Min(settings.maxHealth, currentHealth + amount);
+        
+        if (currentHealth != previousHealth)
+        {
+            OnHealthChanged?.Invoke(currentHealth, settings.maxHealth);
+            OnHealthRestored?.Invoke();
+        }
+    }
+    
+    public void SetMaxHealth(int newMaxHealth)
+    {
+        settings.maxHealth = newMaxHealth;
+        currentHealth = Mathf.Min(currentHealth, settings.maxHealth);
+        OnHealthChanged?.Invoke(currentHealth, settings.maxHealth);
+    }
+    
+    private void RegenerateHealth()
+    {
+        float regenAmount = settings.regenerationRate * Time.deltaTime;
+        if (regenAmount &gt;= 1.0f)
+        {
+            RestoreHealth(Mathf.FloorToInt(regenAmount));
+        }
+    }
+    
+    private void Die()
+    {
+        OnDeath?.Invoke();
+        // Optionally disable the GameObject or trigger death effects
+    }
+}
+
+// ReadOnly attribute for inspector display (custom attribute)
+public class ReadOnlyAttribute : PropertyAttribute { }</code></pre>
+            </div>
+
+            <h2>3.4 Prefabs: Reusable GameObject Templates</h2>
+
+            <p>Prefabs represent one of Unity's most powerful features for managing complex, reusable game objects. Think of prefabs as templates or classes in object-oriented programming—they define a blueprint that can be instantiated multiple times throughout your game, with each instance maintaining a connection to the original template.</p>
+
+            <p>This concept should be familiar from infrastructure-as-code tools like Terraform or CloudFormation, where you define templates that can be deployed multiple times with consistent configurations. In Unity, prefabs serve a similar purpose—they ensure consistency across multiple instances of the same type of object while allowing for easy updates and modifications.</p>
+
+            <p>Prefabs solve several common problems in game development: maintaining consistency across multiple similar objects, enabling easy updates to many objects at once, and providing a way to instantiate complex objects at runtime. Without prefabs, you'd need to manually configure each enemy, pickup item, or UI element individually, leading to inconsistencies and making updates extremely tedious.</p>
+
+            <h3>Understanding Prefab Workflow</h3>
+
+            <p>The prefab workflow in Unity follows a pattern similar to version control branching and merging. You create a prefab asset that serves as the "main branch," and then create instances of that prefab in your scenes. Changes made to the prefab asset automatically propagate to all instances, but instances can also have overrides that customize specific properties while maintaining the connection to the original prefab.</p>
+
+            <div class="exercise">
+                <h3>Creating Your First Prefab</h3>
+                <p>Let's walk through creating a prefab for a collectible coin that players can pick up in the game:</p>
+                
+                <ol>
+                    <li><strong>Create the GameObject:</strong>
+                        <ul>
+                            <li>In the Hierarchy, create an empty GameObject and name it "Coin"</li>
+                            <li>Add a SpriteRenderer component and assign a coin texture</li>
+                            <li>Add a CircleCollider2D component and check "Is Trigger"</li>
+                            <li>Create a custom script called "CoinPickup" and attach it</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>Configure the Coin Behavior:</strong>
+                        <div class="code-container">
+                            <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-csharp">using UnityEngine;
+
+public class CoinPickup : MonoBehaviour
+{
+    [Header("Coin Settings")]
+    [SerializeField] private int coinValue = 10;
+    [SerializeField] private float rotationSpeed = 90f;
+    [SerializeField] private AudioClip pickupSound;
+    
+    private void Update()
+    {
+        // Rotate the coin for visual appeal
+        transform.Rotate(0, 0, rotationSpeed * Time.deltaTime);
+    }
+    
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        // Check if the player picked up the coin
+        if (other.CompareTag("Player"))
+        {
+            // Add coin value to player's score
+            PlayerScore playerScore = other.GetComponent&lt;PlayerScore&gt;();
+            if (playerScore != null)
+            {
+                playerScore.AddCoins(coinValue);
+            }
+            
+            // Play pickup sound
+            if (pickupSound != null)
+            {
+                AudioSource.PlayClipAtPoint(pickupSound, transform.position);
+            }
+            
+            // Destroy this coin
+            Destroy(gameObject);
+        }
+    }
+}</code></pre>
+                        </div>
+                    </li>
+                    
+                    <li><strong>Create the Prefab:</strong>
+                        <ul>
+                            <li>Drag the Coin GameObject from the Hierarchy to the Project window</li>
+                            <li>Unity automatically creates a prefab asset</li>
+                            <li>The original GameObject becomes a prefab instance</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>Use the Prefab:</strong>
+                        <ul>
+                            <li>Drag the prefab from Project to Hierarchy to create new instances</li>
+                            <li>Modify the prefab asset to update all instances</li>
+                            <li>Override specific properties on instances when needed</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+
+            <h3>Prefab Variants and Inheritance</h3>
+
+            <p>Unity's prefab system supports inheritance through Prefab Variants, which work similarly to class inheritance in object-oriented programming. You can create a base prefab with common functionality, then create variants that extend or modify that base behavior for specific use cases.</p>
+
+            <p>For example, you might have a base "Enemy" prefab with movement and health components, then create variants like "FastEnemy" (with increased speed) and "TankEnemy" (with more health but slower movement). This approach promotes code reuse while allowing for specialization.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Runtime prefab instantiation and management
+using UnityEngine;
+using System.Collections.Generic;
+
+public class EnemySpawner : MonoBehaviour
+{
+    [Header("Spawning Configuration")]
+    [SerializeField] private GameObject[] enemyPrefabs;
+    [SerializeField] private Transform[] spawnPoints;
+    [SerializeField] private float spawnInterval = 2.0f;
+    [SerializeField] private int maxEnemies = 10;
+    
+    private List&lt;GameObject&gt; activeEnemies = new List&lt;GameObject&gt;();
+    private float lastSpawnTime;
+    
+    void Update()
+    {
+        // Clean up destroyed enemies
+        activeEnemies.RemoveAll(enemy =&gt; enemy == null);
+        
+        // Spawn new enemies if conditions are met
+        if (Time.time - lastSpawnTime &gt; spawnInterval && 
+            activeEnemies.Count &lt; maxEnemies)
+        {
+            SpawnRandomEnemy();
+        }
+    }
+    
+    private void SpawnRandomEnemy()
+    {
+        // Select random prefab and spawn point
+        GameObject prefabToSpawn = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+        Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+        
+        // Instantiate the prefab
+        GameObject newEnemy = Instantiate(prefabToSpawn, spawnPoint.position, spawnPoint.rotation);
+        
+        // Configure the spawned enemy
+        Enemy enemyComponent = newEnemy.GetComponent&lt;Enemy&gt;();
+        if (enemyComponent != null)
+        {
+            enemyComponent.SetTarget(GameObject.FindGameObjectWithTag("Player"));
+        }
+        
+        // Add to active enemies list
+        activeEnemies.Add(newEnemy);
+        lastSpawnTime = Time.time;
+    }
+    
+    public void DestroyAllEnemies()
+    {
+        foreach (GameObject enemy in activeEnemies)
+        {
+            if (enemy != null)
+            {
+                Destroy(enemy);
+            }
+        }
+        activeEnemies.Clear();
+    }
+}</code></pre>
+            </div>
+
+            <h2>3.5 Component Communication Patterns</h2>
+
+            <p>As your Unity projects grow in complexity, managing communication between components becomes crucial for maintaining clean, maintainable code. Just as you need well-defined APIs and communication patterns in distributed systems, Unity projects need clear patterns for how components interact with each other.</p>
+
+            <p>There are several established patterns for component communication in Unity, each with its own strengths and appropriate use cases. Understanding these patterns and knowing when to apply them will help you build more robust and maintainable games.</p>
+
+            <h3>Direct Component References</h3>
+
+            <p>The most straightforward communication pattern involves components holding direct references to other components they need to interact with. This is similar to dependency injection in other frameworks and works well for tightly coupled relationships where components have a clear, stable dependency.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Direct reference pattern - good for tightly coupled components
+using UnityEngine;
+
+public class PlayerController : MonoBehaviour
+{
+    [Header("Component References")]
+    [SerializeField] private Health healthComponent;
+    [SerializeField] private PlayerMovement movementComponent;
+    [SerializeField] private PlayerAnimator animatorComponent;
+    
+    void Start()
+    {
+        // Auto-find components if not assigned
+        if (healthComponent == null)
+            healthComponent = GetComponent&lt;Health&gt;();
+        if (movementComponent == null)
+            movementComponent = GetComponent&lt;PlayerMovement&gt;();
+        if (animatorComponent == null)
+            animatorComponent = GetComponent&lt;PlayerAnimator&gt;();
+    }
+    
+    void Update()
+    {
+        // Handle input and coordinate between components
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
+        
+        // Tell movement component to move
+        movementComponent.Move(horizontal, vertical);
+        
+        // Update animator based on movement
+        animatorComponent.SetMovementSpeed(movementComponent.CurrentSpeed);
+        
+        // Check for damage input (for testing)
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            healthComponent.TakeDamage(10);
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3>Event-Driven Communication</h3>
+
+            <p>Event-driven patterns work excellently for loose coupling between components that don't need to know about each other's implementation details. This approach is similar to pub-sub patterns in distributed systems and helps create more modular, testable code.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Event-driven communication pattern
+using UnityEngine;
+using System;
+
+// Global event manager (similar to event bus pattern)
+public static class GameEvents
+{
+    public static event Action&lt;int&gt; OnScoreChanged;
+    public static event Action&lt;int, int&gt; OnHealthChanged; // current, max
+    public static event Action OnPlayerDied;
+    public static event Action&lt;string&gt; OnLevelCompleted;
+    public static event Action&lt;GameObject&gt; OnEnemyDefeated;
+    
+    // Methods to trigger events
+    public static void TriggerScoreChanged(int newScore)
+    {
+        OnScoreChanged?.Invoke(newScore);
+    }
+    
+    public static void TriggerHealthChanged(int current, int max)
+    {
+        OnHealthChanged?.Invoke(current, max);
+    }
+    
+    public static void TriggerPlayerDied()
+    {
+        OnPlayerDied?.Invoke();
+    }
+    
+    public static void TriggerLevelCompleted(string levelName)
+    {
+        OnLevelCompleted?.Invoke(levelName);
+    }
+    
+    public static void TriggerEnemyDefeated(GameObject enemy)
+    {
+        OnEnemyDefeated?.Invoke(enemy);
+    }
+}
+
+// Component that listens to events
+public class UIManager : MonoBehaviour
+{
+    [Header("UI References")]
+    [SerializeField] private UnityEngine.UI.Text scoreText;
+    [SerializeField] private UnityEngine.UI.Slider healthSlider;
+    [SerializeField] private GameObject gameOverPanel;
+    
+    void OnEnable()
+    {
+        // Subscribe to events
+        GameEvents.OnScoreChanged += UpdateScoreDisplay;
+        GameEvents.OnHealthChanged += UpdateHealthDisplay;
+        GameEvents.OnPlayerDied += ShowGameOver;
+        GameEvents.OnEnemyDefeated += HandleEnemyDefeated;
+    }
+    
+    void OnDisable()
+    {
+        // Unsubscribe to prevent memory leaks
+        GameEvents.OnScoreChanged -= UpdateScoreDisplay;
+        GameEvents.OnHealthChanged -= UpdateHealthDisplay;
+        GameEvents.OnPlayerDied -= ShowGameOver;
+        GameEvents.OnEnemyDefeated -= HandleEnemyDefeated;
+    }
+    
+    private void UpdateScoreDisplay(int newScore)
+    {
+        scoreText.text = $"Score: {newScore:N0}";
+    }
+    
+    private void UpdateHealthDisplay(int current, int max)
+    {
+        healthSlider.value = (float)current / max;
+    }
+    
+    private void ShowGameOver()
+    {
+        gameOverPanel.SetActive(true);
+        Time.timeScale = 0f; // Pause the game
+    }
+    
+    private void HandleEnemyDefeated(GameObject enemy)
+    {
+        // Could trigger score increase, special effects, etc.
+        GameEvents.TriggerScoreChanged(100); // Example: 100 points per enemy
+    }
+}</code></pre>
+            </div>
+
+            <h3>Component Discovery Patterns</h3>
+
+            <p>Sometimes components need to find and communicate with other components dynamically, especially in situations where the exact relationships aren't known at design time. Unity provides several methods for component discovery, each with different performance characteristics and use cases.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Component discovery patterns
+using UnityEngine;
+
+public class ComponentDiscoveryExamples : MonoBehaviour
+{
+    void Start()
+    {
+        // Method 1: Find components on the same GameObject
+        Health myHealth = GetComponent&lt;Health&gt;();
+        Health[] allHealthComponents = GetComponents&lt;Health&gt;(); // Multiple of same type
+        
+        // Method 2: Find components on child GameObjects
+        Health childHealth = GetComponentInChildren&lt;Health&gt;();
+        Health[] allChildHealth = GetComponentsInChildren&lt;Health&gt;();
+        
+        // Method 3: Find components on parent GameObjects
+        Health parentHealth = GetComponentInParent&lt;Health&gt;();
+        Health[] allParentHealth = GetComponentsInParent&lt;Health&gt;();
+        
+        // Method 4: Find GameObjects by name or tag (slower, use sparingly)
+        GameObject player = GameObject.Find("Player");
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        
+        // Method 5: Find components globally (slowest, avoid in Update())
+        Health firstHealthComponent = FindObjectOfType&lt;Health&gt;();
+        Health[] allHealthInScene = FindObjectsOfType&lt;Health&gt;();
+        
+        // Method 6: Using singleton pattern for global access
+        GameManager gameManager = GameManager.Instance;
+    }
+}</code></pre>
+            </div>
+
+            <h2>3.6 Advanced Component Patterns</h2>
+
+            <p>As you become more comfortable with Unity's component system, you'll encounter scenarios where the basic patterns need to be extended or modified to handle complex game requirements. These advanced patterns draw from established software engineering principles and can help you build more scalable and maintainable game systems.</p>
+
+            <h3>Interface-Based Component Design</h3>
+
+            <p>Using interfaces with components promotes loose coupling and makes your systems more flexible and testable. This approach is particularly valuable when you need multiple components to provide similar functionality but with different implementations.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Interface-based component design
+using UnityEngine;
+
+// Define interfaces for common game behaviors
+public interface IDamageable
+{
+    int CurrentHealth { get; }
+    int MaxHealth { get; }
+    bool IsAlive { get; }
+    void TakeDamage(int damage);
+}
+
+public interface IInteractable
+{
+    string InteractionPrompt { get; }
+    bool CanInteract(GameObject interactor);
+    void Interact(GameObject interactor);
+}
+
+public interface IPoolable
+{
+    void OnSpawnFromPool();
+    void OnReturnToPool();
+}
+
+// Implement interfaces in components
+public class DestructibleObject : MonoBehaviour, IDamageable
+{
+    [SerializeField] private int maxHealth = 100;
+    private int currentHealth;
+    
+    public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
+    public bool IsAlive => currentHealth > 0;
+    
+    void Start()
+    {
+        currentHealth = maxHealth;
+    }
+    
+    public void TakeDamage(int damage)
+    {
+        if (!IsAlive) return;
+        
+        currentHealth = Mathf.Max(0, currentHealth - damage);
+        
+        if (!IsAlive)
+        {
+            // Trigger destruction effects
+            Destroy(gameObject);
+        }
+    }
+}
+
+// Use interfaces for flexible component interaction
+public class Weapon : MonoBehaviour
+{
+    [SerializeField] private int damage = 25;
+    [SerializeField] private LayerMask targetLayers;
+    
+    public void Attack(Vector3 direction, float range)
+    {
+        // Raycast to find targets
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, range, targetLayers);
+        
+        if (hit.collider != null)
+        {
+            // Try to damage any IDamageable component
+            IDamageable damageable = hit.collider.GetComponent&lt;IDamageable&gt;();
+            if (damageable != null && damageable.IsAlive)
+            {
+                damageable.TakeDamage(damage);
+            }
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h2>3.7 Exercises</h2>
+
+            <div class="exercise">
+                <h3>Component Composition Challenge</h3>
+                <p>Create a modular enemy system using component composition:</p>
+                <ol>
+                    <li><strong>Base Enemy GameObject:</strong> Create an empty GameObject called "BaseEnemy"</li>
+                    <li><strong>Add Core Components:</strong>
+                        <ul>
+                            <li>SpriteRenderer for visual representation</li>
+                            <li>Rigidbody2D for physics</li>
+                            <li>Collider2D for collision detection</li>
+                            <li>Health component (create custom script)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Create Behavior Components:</strong>
+                        <ul>
+                            <li>EnemyMovement (follows player)</li>
+                            <li>EnemyAttack (damages player on contact)</li>
+                            <li>EnemyAnimator (handles sprite animation)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Make Variants:</strong> Create prefab variants for different enemy types by mixing and matching components</li>
+                </ol>
+            </div>
+
+            <div class="challenge">
+                <h3>Advanced Component Communication</h3>
+                <p>Implement a comprehensive event system for a simple game:</p>
+                <ol>
+                    <li><strong>Create Event System:</strong> Design a type-safe event manager using generics</li>
+                    <li><strong>Implement Game Systems:</strong>
+                        <ul>
+                            <li>Score system that listens for enemy defeat events</li>
+                            <li>UI system that updates displays based on game events</li>
+                            <li>Audio system that plays sounds in response to events</li>
+                        </ul>
+                    </li>
+                    <li><strong>Add Debugging:</strong> Create an event debugger that logs all events with timestamps</li>
+                    <li><strong>Performance Test:</strong> Test the system with 100+ GameObjects generating events</li>
+                </ol>
+            </div>
+
+            <h2>Summary</h2>
+
+            <p>In this chapter, you've learned the foundational concepts that power Unity's architecture:</p>
+            <ul>
+                <li>✅ Entity-Component-System architecture and its advantages over inheritance-based designs</li>
+                <li>✅ GameObjects as containers and their hierarchical relationships through Transform components</li>
+                <li>✅ Components as focused, reusable pieces of functionality</li>
+                <li>✅ Prefabs for creating reusable GameObject templates</li>
+                <li>✅ Communication patterns between components and best practices for loose coupling</li>
+                <li>✅ Advanced patterns using interfaces and component discovery</li>
+            </ul>
+
+            <p>Understanding GameObjects and Components is crucial because they form the foundation of everything you'll build in Unity. Every game mechanic, visual effect, and interactive element is constructed using these building blocks. The component-based approach promotes code reuse, makes systems easier to test and debug, and allows for the kind of rapid iteration that's essential in game development.</p>
+
+            <div class="alert alert-success" style="margin-top: 2rem;">
+                <h3>Next Steps</h3>
+                <p>Before moving to Chapter 4:</p>
+                <ol>
+                    <li>Practice creating GameObjects with different component combinations</li>
+                    <li>Experiment with parent-child relationships and Transform hierarchies</li>
+                    <li>Create your first prefab and instantiate it multiple times</li>
+                    <li>Implement event-driven communication between components</li>
+                    <li>Try the component composition challenge to reinforce your understanding</li>
+                </ol>
+                <p style="margin-top: 1rem;"><strong>Remember:</strong> Good component design leads to flexible, maintainable games!</p>
+                
+                <div class="demo-controls" style="margin-top: 1rem;">
+                    <button class="demo-button" onclick="window.location.href='chapter02.html'">
+                        ← Previous Chapter
+                    </button>
+                    <button class="demo-button" onclick="window.location.href='chapter04.html'">
+                        Continue to Chapter 4 →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // Component example demonstration
+        function showComponentExample(type) {
+            const output = document.getElementById('componentOutput');
+            let content = '';
+            
+            switch(type) {
+                case 'player':
+                    content = `
+<strong>🎮 Player GameObject Composition</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GameObject: Player
+├── Transform (required - position, rotation, scale)
+├── SpriteRenderer (visual representation)
+├── Rigidbody2D (physics and movement)
+├── BoxCollider2D (collision detection)
+├── PlayerController (custom - handles input)
+├── Health (custom - manages hit points)
+├── PlayerAnimator (custom - sprite animations)
+└── AudioSource (sound effects)
+
+This composition creates a player character that can:
+✅ Move around the world (Rigidbody2D + PlayerController)
+✅ Be seen by players (SpriteRenderer + PlayerAnimator)
+✅ Collide with objects (BoxCollider2D)
+✅ Take damage (Health)
+✅ Play sounds (AudioSource)
+                    `;
+                    break;
+                    
+                case 'enemy':
+                    content = `
+<strong>👾 Enemy GameObject Composition</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GameObject: Enemy
+├── Transform (required - position, rotation, scale)
+├── SpriteRenderer (visual representation)
+├── Rigidbody2D (physics and movement)
+├── CircleCollider2D (collision detection)
+├── EnemyAI (custom - behavior and targeting)
+├── Health (custom - manages hit points)
+├── EnemyAttack (custom - damage dealing)
+└── DropLoot (custom - items on death)
+
+This composition creates an enemy that can:
+✅ Patrol or chase players (EnemyAI + Rigidbody2D)
+✅ Be visually distinct (SpriteRenderer)
+✅ Attack players (EnemyAttack + CircleCollider2D)
+✅ Take damage and die (Health)
+✅ Drop rewards (DropLoot)
+                    `;
+                    break;
+                    
+                case 'pickup':
+                    content = `
+<strong>💰 Pickup Item Composition</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GameObject: CoinPickup
+├── Transform (required - position, rotation, scale)
+├── SpriteRenderer (visual representation)
+├── CircleCollider2D (trigger volume, no physics)
+├── CoinPickup (custom - pickup behavior)
+├── RotationAnimation (custom - visual appeal)
+└── AudioSource (pickup sound)
+
+This composition creates a collectible that can:
+✅ Be visible to players (SpriteRenderer)
+✅ Detect player contact (CircleCollider2D as trigger)
+✅ Give rewards when collected (CoinPickup)
+✅ Rotate for visual appeal (RotationAnimation)
+✅ Play collection sound (AudioSource)
+
+Note: No Rigidbody2D = no physics simulation needed!
+                    `;
+                    break;
+                    
+                case 'decoration':
+                    content = `
+<strong>🌳 Decoration Object Composition</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GameObject: Tree
+├── Transform (required - position, rotation, scale)
+├── SpriteRenderer (visual representation)
+├── BoxCollider2D (solid obstacle)
+└── WindEffect (custom - animated swaying)
+
+This composition creates scenery that can:
+✅ Be visible in the world (SpriteRenderer)  
+✅ Block player/enemy movement (BoxCollider2D)
+✅ Sway in the wind (WindEffect)
+
+Simple composition for static world elements!
+No physics needed - just collision for obstacles.
+                    `;
+                    break;
+            }
+            
+            output.innerHTML = content;
+        }
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

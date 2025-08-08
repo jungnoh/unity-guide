@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Unity Editor & Project Setup - Unity Game Development Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">Chapter 2</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html">📚 Introduction</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html" class="active">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html">Ch 3: GameObjects & Components</a></li>
+            <li><a href="chapter04.html">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html">Ch 6: Physics & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+            <h1>Chapter 2: Unity Editor and Project Setup</h1>
+            
+            <div class="learning-objectives">
+                <h3>Learning Objectives</h3>
+                <ul>
+                    <li>Master the Unity Editor interface and workflow</li>
+                    <li>Set up professional project structure and organization</li>
+                    <li>Configure version control for Unity projects</li>
+                    <li>Understand Unity's package management system</li>
+                    <li>Implement DevOps best practices in Unity development</li>
+                    <li>Set up automated build pipelines for Unity projects</li>
+                </ul>
+            </div>
+
+            <h2>2.1 Unity Editor Deep Dive</h2>
+            
+            <p>As a DevOps engineer, you're accustomed to powerful development environments that streamline your workflow and provide comprehensive tooling. Unity's Editor represents a paradigm shift from traditional IDEs—it's not just a code editor, but a complete game development workbench that combines visual scene editing, code development, asset management, debugging, and deployment capabilities into a single, integrated environment.</p>
+
+            <p>The fundamental difference lies in Unity's hybrid approach to development. While traditional IDEs like Visual Studio or VS Code focus primarily on code editing with some visual debugging capabilities, Unity Editor treats your game world as a living, interactive environment that you can modify in real-time. This means you can place objects in your game world, configure their properties visually, test interactions immediately, and see changes reflected instantly—all while your game is running.</p>
+
+            <p>This approach might feel foreign at first, especially coming from server-side development where everything is code-driven and configuration-based. However, once you understand the power of this visual-first approach, you'll appreciate how it accelerates game development by making complex 3D relationships and interactions immediately tangible.</p>
+
+            <div class="interactive-demo">
+                <h3>Understanding the Paradigm Shift</h3>
+                <p>Let's examine how Unity's approach differs from traditional development environments you're familiar with:</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1rem 0;">
+                    <div>
+                        <h4 style="color: var(--primary-color);">Traditional Development (VS Code/Visual Studio)</h4>
+                        <p>In traditional development, you work primarily with text files and configurations. Your application's structure is defined through code, and you visualize the results by running the application. Changes require stopping, recompiling, and restarting the application to see results.</p>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent-color);">Unity Development</h4>
+                        <p>Unity blends visual editing with code development. You can see your game world in real-time, manipulate objects visually, and test changes immediately without stopping the game. Code integrates seamlessly with visual elements through a component-based architecture.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Navigating the Unity Editor Interface</h3>
+
+            <p>When you first open Unity, the interface can seem overwhelming—there are multiple windows, panels, and tools scattered across the screen. However, there's a logical organization to this apparent chaos. Each window serves a specific purpose in the game development workflow, and understanding how they interconnect is crucial for efficient development.</p>
+
+            <p>Think of Unity's interface like a mission control center where each panel provides different types of information about your game. Just as you might have multiple monitors in a DevOps setup—one showing system metrics, another displaying logs, and a third with your IDE—Unity arranges different aspects of your game development into specialized windows.</p>
+
+            <div class="alert alert-info">
+                <h4>Unity Editor Layout Overview</h4>
+                <p>The default Unity layout follows a logical structure that mirrors many professional development tools. Here's how the interface is organized:</p>
+                <pre style="text-align: center; font-size: 0.9rem; margin: 1rem 0;">
+┌──────────────────────────────────────────────────────────┐
+│  File  Edit  Assets  GameObject  Component  Window  Help  │ ← Menu Bar
+├─────────────┬──────────────────────────┬─────────────────┤
+│             │                          │                 │
+│  Hierarchy  │         Scene            │   Inspector     │ ← Main Workspace
+│             │                          │                 │
+│  - Player   │    ┌──────────┐          │  Transform      │
+│  - Enemy    │    │  Player  │          │   Pos: 0,0,0    │
+│  - UI       │    │   [✓]    │          │   Rot: 0,0,0    │
+│             │    └──────────┘          │   Scale: 1,1,1  │
+│             │                          │                 │
+│             │         Game             │  Add Component  │
+├─────────────┼──────────────────────────┼─────────────────┤
+│             │                          │                 │
+│  Project    │       Console            │   Animation     │ ← Bottom Panel
+│             │                          │                 │
+│ Assets/     │ Debug.Log("Hello")       │   Timeline      │
+│  Scripts/   │ Warning: Unused variable │                 │
+│  Prefabs/   │ Error: NullReference     │                 │
+│             │                          │                 │
+└─────────────┴──────────────────────────┴─────────────────┘</pre>
+            </div>
+
+            <h3>Understanding Unity's Core Windows</h3>
+
+            <p>Each window in Unity serves a distinct purpose in your development workflow. Let's explore the four primary windows you'll work with daily, drawing parallels to tools and concepts you already know from DevOps and web development.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                <div class="alert alert-info">
+                    <h4>🗂️ Hierarchy Window</h4>
+                    <p>The Hierarchy window functions like a Docker Compose service list or a file tree in your IDE. It displays all GameObjects (the fundamental entities in your game) within the current scene, organized in a tree structure that shows parent-child relationships.</p>
+                    
+                    <p>Just as you might have a web service that contains multiple microservices, Unity GameObjects can contain child objects. For example, a Player GameObject might contain child objects for the player's weapon, health bar, and collision detection areas. You can enable or disable entire object hierarchies, reorganize them through drag-and-drop, and quickly navigate to any object in your scene.</p>
+                </div>
+                <div class="alert alert-success">
+                    <h4>🎬 Scene Window</h4>
+                    <p>The Scene window is your primary visual editor—think of it as a 3D version of a web browser's developer tools, but for manipulating your game world in real-time. This is where you visually construct your game scenes, position objects, and see exactly how they'll appear to players.</p>
+                    
+                    <p>Unlike traditional development where you visualize results by running your application, Unity's Scene window provides immediate visual feedback. You can move objects with intuitive gizmos (visual manipulation tools), preview how your game will look from different camera angles, and see changes instantly without stopping or restarting your game.</p>
+                </div>
+                <div class="alert alert-warning">
+                    <h4>🔍 Inspector Window</h4>
+                    <p>The Inspector is Unity's equivalent to Docker container details or Kubernetes resource specifications—it shows you all the properties and configurations of whatever you've selected. When you select a GameObject, the Inspector reveals all its components and allows you to modify their properties in real-time.</p>
+                    
+                    <p>This is where Unity's component-based architecture shines. Just as you might configure a Docker container with environment variables, volumes, and network settings, Unity GameObjects are configured through components that handle rendering, physics, audio, custom scripts, and more. The Inspector makes these configurations visual and immediately accessible.</p>
+                </div>
+                <div class="alert alert-danger">
+                    <h4>📁 Project Window</h4>
+                    <p>The Project window serves as Unity's file explorer, similar to VS Code's file tree or a repository browser. It shows all assets in your project—scripts, images, audio files, 3D models, and more. However, unlike a simple file browser, Unity's Project window understands relationships between assets and provides powerful search and filtering capabilities.</p>
+                    
+                    <p>Unity automatically tracks dependencies between assets, much like how package managers track dependencies between libraries. When you import an image, Unity automatically generates metadata and optimized versions for different platforms. The Project window gives you control over these assets and their import settings.</p>
+                </div>
+            </div>
+
+            <h2>2.2 Professional Project Structure</h2>
+
+            <p>Coming from a DevOps background, you already understand how critical proper project organization is for maintainability, team collaboration, and scalability. A poorly organized codebase becomes a nightmare to debug, deploy, and extend—the same principles apply to Unity projects, but with additional considerations for game-specific assets like 3D models, textures, audio files, and scene data.</p>
+
+            <p>Unity projects have a unique structure that differs significantly from traditional software projects. While a typical web application might organize files primarily by functionality (controllers, models, views), Unity projects must balance functional organization with asset types and performance considerations. The way you structure your Unity project can dramatically impact build times, asset loading performance, and team productivity.</p>
+
+            <p>Moreover, Unity's asset pipeline introduces dependencies that don't exist in traditional software development. A single 3D model might depend on materials, which depend on textures, which might be referenced by multiple scenes. Understanding these relationships and organizing your project to minimize complexity is essential for professional game development.</p>
+
+            <h3>Understanding Unity's Project Anatomy</h3>
+
+            <p>Before diving into recommended folder structures, it's important to understand how Unity organizes projects at the file system level. Unlike web applications where you have complete control over your project structure, Unity imposes certain conventions and generates specific folders that serve critical functions in the build and development process.</p>
+
+            <p>When you create a new Unity project, several folders are automatically generated. Some of these should be committed to version control, others should be ignored, and some serve as caches that Unity manages automatically. Understanding the purpose of each folder will help you make informed decisions about project organization and version control configuration.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-plaintext">MyUnityProject/
+├── Assets/                          # Source code and resources
+│   ├── Scripts/                     # C# scripts
+│   │   ├── Player/                  # Player-related scripts
+│   │   ├── Enemies/                 # Enemy-related scripts
+│   │   ├── UI/                      # User interface scripts
+│   │   ├── Managers/                # Game managers (singleton pattern)
+│   │   └── Utilities/               # Helper and utility scripts
+│   ├── Prefabs/                     # Reusable GameObjects
+│   │   ├── Characters/
+│   │   ├── UI/
+│   │   └── Environment/
+│   ├── Scenes/                      # Scene files (.unity)
+│   │   ├── MainMenu.unity
+│   │   ├── Level1.unity
+│   │   └── GameOver.unity
+│   ├── Materials/                   # Visual materials
+│   ├── Textures/                    # Image assets
+│   ├── Audio/                       # Sound effects and music
+│   │   ├── SFX/
+│   │   └── Music/
+│   ├── Animations/                  # Animation files
+│   ├── Fonts/                       # Typography assets
+│   └── StreamingAssets/             # Files copied to build as-is
+├── Packages/                        # Package dependencies (read-only)
+│   ├── manifest.json                # Package manifest
+│   └── packages-lock.json           # Lockfile (like package-lock.json)
+├── ProjectSettings/                 # Unity project configuration
+│   ├── ProjectSettings.asset
+│   ├── EditorSettings.asset
+│   └── InputManager.asset
+├── UserSettings/                    # User-specific settings (gitignore)
+├── Library/                         # Unity cache (gitignore)
+├── Temp/                           # Temporary files (gitignore)
+├── Logs/                           # Build and editor logs (gitignore)
+├── .gitignore                      # Version control exclusions
+├── .gitattributes                  # Git LFS configuration
+└── README.md                       # Project documentation</code></pre>
+            </div>
+
+            <h3>Recommended Folder Structure</h3>
+
+            <div class="exercise">
+                <h3>Setting Up Professional Project Structure</h3>
+                <p>Create this folder structure in your Unity project:</p>
+
+                <div class="code-container">
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <pre><code class="language-plaintext">Assets/
+├── _Project/                        # Project-specific assets
+│   ├── Scripts/
+│   │   ├── Architecture/            # Core systems, managers
+│   │   ├── Gameplay/               # Game mechanics
+│   │   ├── UI/                     # User interface
+│   │   └── Utilities/              # Helper functions
+│   ├── Prefabs/
+│   │   ├── Characters/
+│   │   ├── Environment/
+│   │   ├── UI/
+│   │   └── VFX/
+│   ├── Scenes/
+│   │   ├── _Main/                  # Core scenes
+│   │   ├── Levels/                 # Game levels
+│   │   └── Testing/                # Development scenes
+│   ├── Art/
+│   │   ├── Materials/
+│   │   ├── Textures/
+│   │   └── Models/
+│   ├── Audio/
+│   │   ├── Music/
+│   │   ├── SFX/
+│   │   └── Voice/
+│   └── Data/                       # ScriptableObjects, configs
+├── Plugins/                        # Third-party plugins
+├── StreamingAssets/                # Runtime data files
+└── TextMeshPro/                   # TextMeshPro assets (auto-generated)</code></pre>
+                </div>
+
+                <div class="alert alert-success">
+                    <h4>🎯 Best Practices</h4>
+                    <ul>
+                        <li><strong>_Project folder:</strong> Prefix with underscore to keep it at the top</li>
+                        <li><strong>No spaces:</strong> Use PascalCase or underscores in folder names</li>
+                        <li><strong>Consistent naming:</strong> Establish naming conventions for your team</li>
+                        <li><strong>Asset organization:</strong> Group by function, not file type</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>2.3 Version Control with Git</h2>
+
+            <p>Unity projects require special Git configuration due to binary assets and Unity-specific files.</p>
+
+            <h3>Essential Git Configuration</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-gitignore"># Unity-optimized .gitignore
+
+# Unity generated files
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Memory captures and crash reports
+[Mm]emoryCaptures/
+sysinfo.txt
+
+# Unity asset meta files (keep .meta files)
+# *.meta
+
+# Unity cache and packages
+[Ll]ibrary/
+[Tt]emp/
+[Ll]ocal[Cc]ache/
+[Ll]ocal[Uu]nityCache/
+
+# Autogenerated VS/MD/Consulo solution and project files
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity3D generated files on crash
+sysinfo.txt
+
+# Unity3D Auto Generated Classes
+[Ss]criptAssemblies/
+
+# Builds
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db</code></pre>
+            </div>
+
+            <h3>Git LFS for Large Assets</h3>
+
+            <div class="alert alert-warning">
+                <h4>⚠️ Unity Assets and Git LFS</h4>
+                <p>Unity projects often contain large binary files. Use Git LFS (Large File Storage) for:</p>
+                <ul>
+                    <li>Textures and images (.png, .jpg, .tga)</li>
+                    <li>Audio files (.wav, .mp3, .ogg)</li>
+                    <li>3D models (.fbx, .obj)</li>
+                    <li>Unity packages (.unitypackage)</li>
+                </ul>
+            </div>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-gitattributes"># .gitattributes for Unity projects
+
+# Image files
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.tga filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.bmp filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+
+# Audio files
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.ogg filter=lfs diff=lfs merge=lfs -text
+*.aiff filter=lfs diff=lfs merge=lfs -text
+*.aif filter=lfs diff=lfs merge=lfs -text
+
+# 3D models
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.obj filter=lfs diff=lfs merge=lfs -text
+*.max filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.3ds filter=lfs diff=lfs merge=lfs -text
+
+# Video files
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.avi filter=lfs diff=lfs merge=lfs -text
+
+# Unity packages
+*.unitypackage filter=lfs diff=lfs merge=lfs -text
+
+# Ensure Unity yaml files are handled correctly
+*.unity merge=unityyamlmerge eol=lf
+*.prefab merge=unityyamlmerge eol=lf
+*.asset merge=unityyamlmerge eol=lf
+*.meta eol=lf</code></pre>
+            </div>
+
+            <h3>Unity Collaboration Setup</h3>
+
+            <div class="interactive-demo">
+                <h3>Git + Unity Team Workflow</h3>
+                <div class="demo-controls">
+                    <button class="demo-button" onclick="showGitWorkflow('init')">Initialize Project</button>
+                    <button class="demo-button" onclick="showGitWorkflow('feature')">Feature Branch</button>
+                    <button class="demo-button" onclick="showGitWorkflow('merge')">Merge Strategy</button>
+                    <button class="demo-button" onclick="showGitWorkflow('conflicts')">Resolve Conflicts</button>
+                </div>
+                <div class="demo-output" id="gitWorkflowOutput">
+                    Click a button to see Unity Git workflows
+                </div>
+            </div>
+
+            <h2>2.4 Unity Package Manager</h2>
+
+            <p>Unity's Package Manager is similar to npm, pip, or NuGet - it manages dependencies and external libraries for your project.</p>
+
+            <div class="alert alert-info">
+                <h4>Package Manager vs Traditional Package Managers</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>npm (Node.js)</th>
+                            <th>Unity Package Manager</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Configuration File</strong></td>
+                            <td>package.json</td>
+                            <td>Packages/manifest.json</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lock File</strong></td>
+                            <td>package-lock.json</td>
+                            <td>Packages/packages-lock.json</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Installation Location</strong></td>
+                            <td>node_modules/</td>
+                            <td>Packages/ (read-only)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Registry</strong></td>
+                            <td>npmjs.com</td>
+                            <td>Unity Registry + Git URLs</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Essential Unity Packages</h3>
+
+            <div class="exercise">
+                <h3>Setting Up Development Packages</h3>
+                <p>Add these packages to your Unity project via Window → Package Manager:</p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                    <div class="alert alert-success">
+                        <h4>🔧 Core Development</h4>
+                        <ul>
+                            <li><strong>TextMeshPro</strong> - Modern text rendering</li>
+                            <li><strong>Input System</strong> - New input management</li>
+                            <li><strong>Cinemachine</strong> - Advanced camera system</li>
+                            <li><strong>Unity Addressables</strong> - Asset management</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-info">
+                        <h4>🧪 Testing & Debugging</h4>
+                        <ul>
+                            <li><strong>Test Runner</strong> - Unit testing framework</li>
+                            <li><strong>Code Coverage</strong> - Test coverage analysis</li>
+                            <li><strong>Performance Testing API</strong> - Benchmarking</li>
+                            <li><strong>Unity Profiler</strong> - Performance analysis</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-warning">
+                        <h4>⚡ Performance</h4>
+                        <ul>
+                            <li><strong>Burst Compiler</strong> - High-performance C# compilation</li>
+                            <li><strong>Collections</strong> - High-performance data structures</li>
+                            <li><strong>Jobs System</strong> - Multithreading support</li>
+                            <li><strong>Unity NetCode</strong> - Networking (if needed)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Custom Package Management</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-json">// Packages/manifest.json - Unity's package configuration
+{
+  "dependencies": {
+    // Unity Registry packages
+    "com.unity.textmeshpro": "3.0.6",
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.cinemachine": "2.9.7",
+    "com.unity.test-runner": "1.1.33",
+    "com.unity.addressables": "1.21.18",
+    
+    // Git packages (like npm git dependencies)
+    "com.mycompany.utilities": "https://github.com/mycompany/unity-utilities.git#v1.2.0",
+    
+    // Local packages (for development)
+    "com.mycompany.core": "file:../MyUnityCore",
+    
+    // Registry packages with specific versions
+    "com.unity.2d.sprite": "1.0.0",
+    "com.unity.ide.visualstudio": "2.0.18"
+  },
+  
+  // Custom registries (like private npm registries)
+  "scopedRegistries": [
+    {
+      "name": "My Company Registry",
+      "url": "https://npm.mycompany.com",
+      "scopes": [
+        "com.mycompany"
+      ]
+    }
+  ]
+}</code></pre>
+            </div>
+
+            <h2>2.5 Project Settings and Configuration</h2>
+
+            <p>Unity's Project Settings are like configuration files in traditional applications - they control how your game builds, runs, and behaves across different platforms.</p>
+
+            <h3>Key Project Settings</h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                <div class="alert alert-info">
+                    <h4>⚙️ Player Settings</h4>
+                    <ul>
+                        <li><strong>Company Name</strong> - Your organization</li>
+                        <li><strong>Product Name</strong> - Game title</li>
+                        <li><strong>Version</strong> - Semantic versioning (1.0.0)</li>
+                        <li><strong>Platform Settings</strong> - Per-platform configuration</li>
+                        <li><strong>Scripting Backend</strong> - Mono vs IL2CPP</li>
+                    </ul>
+                </div>
+                <div class="alert alert-success">
+                    <h4>🔨 Build Settings</h4>
+                    <ul>
+                        <li><strong>Target Platform</strong> - Windows, Mac, WebGL, Mobile</li>
+                        <li><strong>Architecture</strong> - x86, x64, ARM64</li>
+                        <li><strong>Compression</strong> - LZ4, LZMA</li>
+                        <li><strong>Development Build</strong> - Debug vs Release</li>
+                        <li><strong>Scene List</strong> - Which scenes to include</li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <h4>🌐 Quality Settings</h4>
+                    <ul>
+                        <li><strong>Quality Levels</strong> - Low, Medium, High, Ultra</li>
+                        <li><strong>Resolution Scaling</strong> - Performance optimization</li>
+                        <li><strong>Shadow Settings</strong> - Visual quality vs performance</li>
+                        <li><strong>Anti-Aliasing</strong> - MSAA, FXAA settings</li>
+                        <li><strong>VSync</strong> - Frame rate control</li>
+                    </ul>
+                </div>
+                <div class="alert alert-danger">
+                    <h4>🔧 Graphics Settings</h4>
+                    <ul>
+                        <li><strong>Render Pipeline</strong> - Built-in, URP, HDRP</li>
+                        <li><strong>Color Space</strong> - Linear vs Gamma</li>
+                        <li><strong>Graphics APIs</strong> - DirectX, OpenGL, Vulkan</li>
+                        <li><strong>Shader Stripping</strong> - Build optimization</li>
+                        <li><strong>Lightmap Settings</strong> - Baking configuration</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>DevOps-Friendly Configuration</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Editor script for automated project configuration
+using UnityEngine;
+using UnityEditor;
+
+public static class ProjectSetup
+{
+    [MenuItem("Tools/Setup Project for DevOps")]
+    public static void SetupProject()
+    {
+        // Configure player settings
+        PlayerSettings.companyName = "Your Company";
+        PlayerSettings.productName = "Your Game";
+        PlayerSettings.bundleVersion = "1.0.0";
+        
+        // Set scripting backend
+        PlayerSettings.SetScriptingBackend(
+            BuildTargetGroup.Standalone, 
+            ScriptingImplementation.IL2CPP
+        );
+        
+        // Configure quality settings
+        QualitySettings.names = new string[] { "Low", "Medium", "High", "Ultra" };
+        QualitySettings.SetQualityLevel(2); // Default to High
+        
+        // Enable development settings for builds
+        EditorUserBuildSettings.development = true;
+        EditorUserBuildSettings.connectProfiler = true;
+        
+        // Configure version control settings
+        EditorSettings.serializationMode = SerializationMode.ForceText;
+        EditorSettings.lineEndingsForNewScripts = LineEndingsMode.Unix;
+        
+        Debug.Log("Project configured for DevOps workflow!");
+    }
+}</code></pre>
+            </div>
+
+            <h2>2.6 Editor Customization and Productivity</h2>
+
+            <h3>Essential Editor Settings</h3>
+
+            <div class="alert alert-info">
+                <h4>⚡ Performance Optimizations</h4>
+                <p>Configure these settings for optimal development experience:</p>
+                <ul>
+                    <li><strong>Preferences → External Tools:</strong> Set up your preferred IDE</li>
+                    <li><strong>Preferences → General → Auto Refresh:</strong> Enable for real-time updates</li>
+                    <li><strong>Preferences → General → Compress Assets on Import:</strong> Disable for faster imports</li>
+                    <li><strong>Project Settings → Editor → Version Control Mode:</strong> Set to "Visible Meta Files"</li>
+                    <li><strong>Project Settings → Editor → Asset Serialization:</strong> Set to "Force Text"</li>
+                </ul>
+            </div>
+
+            <h3>Custom Editor Layout</h3>
+
+            <div class="exercise">
+                <h3>Create a DevOps-Optimized Layout</h3>
+                <ol>
+                    <li><strong>Save Current Layout:</strong> Window → Layouts → Save Layout As... "DevOps Layout"</li>
+                    <li><strong>Add Console Tab:</strong> Drag Console tab next to Project window</li>
+                    <li><strong>Add Profiler:</strong> Window → Analysis → Profiler (dock as tab)</li>
+                    <li><strong>Add Package Manager:</strong> Window → Package Manager (floating window)</li>
+                    <li><strong>Organize Inspector:</strong> Enable "Lock" icon for multiple inspectors</li>
+                </ol>
+                
+                <div class="alert alert-success">
+                    <h4>💡 Pro Tips</h4>
+                    <ul>
+                        <li>Use multiple Inspector windows to compare GameObjects</li>
+                        <li>Keep Console visible for real-time debugging</li>
+                        <li>Pin frequently used windows as floating panels</li>
+                        <li>Use keyboard shortcuts: F to focus selected object, Ctrl+P for Play mode</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>2.7 Automation and Build Pipeline</h2>
+
+            <p>As a DevOps engineer, you'll want to automate Unity builds and integrate them into your CI/CD pipeline.</p>
+
+            <h3>Command Line Build Script</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Assets/Editor/BuildScript.cs
+using UnityEngine;
+using UnityEditor;
+using UnityEditor.Build.Reporting;
+using System;
+
+public static class BuildScript
+{
+    public static void BuildWindows()
+    {
+        BuildGame(BuildTarget.StandaloneWindows64, "Builds/Windows/Game.exe");
+    }
+    
+    public static void BuildWebGL()
+    {
+        BuildGame(BuildTarget.WebGL, "Builds/WebGL");
+    }
+    
+    public static void BuildLinux()
+    {
+        BuildGame(BuildTarget.StandaloneLinux64, "Builds/Linux/Game.x86_64");
+    }
+    
+    private static void BuildGame(BuildTarget target, string path)
+    {
+        // Get scenes from build settings
+        string[] scenes = GetScenesFromBuildSettings();
+        
+        // Configure build options
+        BuildPlayerOptions buildOptions = new BuildPlayerOptions
+        {
+            scenes = scenes,
+            locationPathName = path,
+            target = target,
+            options = GetBuildOptions()
+        };
+        
+        // Perform build
+        BuildReport report = BuildPipeline.BuildPlayer(buildOptions);
+        
+        // Check result
+        if (report.summary.result == BuildResult.Succeeded)
+        {
+            Debug.Log($"Build succeeded: {report.summary.totalSize} bytes");
+            EditorApplication.Exit(0); // Success exit code
+        }
+        else
+        {
+            Debug.LogError($"Build failed: {report.summary.result}");
+            EditorApplication.Exit(1); // Failure exit code
+        }
+    }
+    
+    private static string[] GetScenesFromBuildSettings()
+    {
+        EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
+        string[] scenePaths = new string[scenes.Length];
+        
+        for (int i = 0; i < scenes.Length; i++)
+        {
+            scenePaths[i] = scenes[i].path;
+        }
+        
+        return scenePaths;
+    }
+    
+    private static BuildOptions GetBuildOptions()
+    {
+        BuildOptions options = BuildOptions.None;
+        
+        // Check for development build
+        if (Environment.GetEnvironmentVariable("DEVELOPMENT_BUILD") == "true")
+        {
+            options |= BuildOptions.Development;
+            options |= BuildOptions.ConnectWithProfiler;
+        }
+        
+        // Check for debug symbols
+        if (Environment.GetEnvironmentVariable("INCLUDE_SYMBOLS") == "true")
+        {
+            options |= BuildOptions.AllowDebugging;
+        }
+        
+        return options;
+    }
+}</code></pre>
+            </div>
+
+            <h3>GitHub Actions CI/CD Pipeline</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-yaml"># .github/workflows/build.yml
+name: Unity Build Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  UNITY_VERSION: 2022.3.12f1
+
+jobs:
+  test:
+    name: Run Unity Tests
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout repository
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      # Cache Unity installation
+      - uses: actions/cache@v3
+        with:
+          path: /opt/unity
+          key: unity-${{ env.UNITY_VERSION }}
+
+      # Run Unity tests
+      - name: Run Tests
+        uses: game-ci/unity-test-runner@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          projectPath: .
+          testMode: all
+          artifactsPath: test-results
+
+      # Upload test results
+      - uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: test-results
+
+  build:
+    name: Build for ${{ matrix.targetPlatform }}
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - StandaloneWindows64
+          - StandaloneLinux64
+          - WebGL
+
+    steps:
+      # Checkout repository
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      # Cache Unity installation
+      - uses: actions/cache@v3
+        with:
+          path: /opt/unity
+          key: unity-${{ env.UNITY_VERSION }}
+
+      # Build Unity project
+      - name: Build Unity Project
+        uses: game-ci/unity-builder@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          projectPath: .
+          targetPlatform: ${{ matrix.targetPlatform }}
+          buildsPath: builds
+          buildMethod: BuildScript.BuildWindows
+
+      # Upload build artifacts
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.targetPlatform }}
+          path: builds
+
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+      # Download build artifacts
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-WebGL
+          path: webgl-build
+
+      # Deploy to staging server
+      - name: Deploy to Staging
+        run: |
+          # Upload to your staging server
+          # rsync -avz webgl-build/ user@staging-server:/var/www/game/
+          echo "Deploying to staging environment..."</code></pre>
+            </div>
+
+            <h3>Docker for Unity Builds</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-dockerfile"># Dockerfile for Unity CI builds
+FROM unityci/editor:ubuntu-2022.3.12f1-base-1
+
+# Set working directory
+WORKDIR /project
+
+# Copy project files
+COPY . .
+
+# Set permissions for Unity
+RUN chmod +x /project/Assets/Editor/BuildScript.cs
+
+# Build command
+CMD ["unity-editor", \
+     "-batchmode", \
+     "-quit", \
+     "-projectPath", "/project", \
+     "-executeMethod", "BuildScript.BuildWindows", \
+     "-logFile", "/dev/stdout"]</code></pre>
+            </div>
+
+            <h2>2.8 Performance Monitoring and Analytics</h2>
+
+            <div class="alert alert-info">
+                <h4>Unity Analytics Integration</h4>
+                <p>Unity provides built-in analytics similar to Application Insights or New Relic for games:</p>
+                <ul>
+                    <li><strong>Unity Analytics:</strong> Player behavior tracking</li>
+                    <li><strong>Unity Cloud Diagnostics:</strong> Crash reporting and performance monitoring</li>
+                    <li><strong>Unity Profiler:</strong> Real-time performance analysis</li>
+                    <li><strong>Memory Profiler:</strong> Memory usage optimization</li>
+                </ul>
+            </div>
+
+            <h3>Setting Up Development Metrics</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Performance monitoring for development
+using UnityEngine;
+using Unity.Profiling;
+
+public class PerformanceMonitor : MonoBehaviour
+{
+    private ProfilerRecorder systemMemoryRecorder;
+    private ProfilerRecorder gcMemoryRecorder;
+    private ProfilerRecorder mainThreadTimeRecorder;
+    
+    void OnEnable()
+    {
+        systemMemoryRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "System Used Memory");
+        gcMemoryRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Reserved Memory");
+        mainThreadTimeRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Internal, "Main Thread", 15);
+    }
+
+    void OnDisable()
+    {
+        systemMemoryRecorder.Dispose();
+        gcMemoryRecorder.Dispose();
+        mainThreadTimeRecorder.Dispose();
+    }
+
+    void OnGUI()
+    {
+        #if DEVELOPMENT_BUILD || UNITY_EDITOR
+        GUILayout.BeginArea(new Rect(10, 10, 250, 100));
+        GUILayout.Label($"System Memory: {systemMemoryRecorder.LastValue / (1024 * 1024)} MB");
+        GUILayout.Label($"GC Memory: {gcMemoryRecorder.LastValue / (1024 * 1024)} MB");
+        
+        if (mainThreadTimeRecorder.Valid)
+        {
+            var frameTime = mainThreadTimeRecorder.LastValue * (1e-6f);
+            GUILayout.Label($"Frame Time: {frameTime:F2} ms ({1.0f / (frameTime / 1000.0f):F0} FPS)");
+        }
+        GUILayout.EndArea();
+        #endif
+    }
+}</code></pre>
+            </div>
+
+            <h2>2.9 Exercises</h2>
+
+            <div class="exercise">
+                <h3>Project Setup Challenge</h3>
+                <ol>
+                    <li><strong>Create Professional Structure:</strong> Set up the recommended folder structure in a new Unity project</li>
+                    <li><strong>Configure Version Control:</strong> Initialize Git with proper .gitignore and .gitattributes</li>
+                    <li><strong>Add Essential Packages:</strong> Install TextMeshPro, Input System, and Test Runner</li>
+                    <li><strong>Custom Editor Script:</strong> Create an editor script that logs system information</li>
+                    <li><strong>Build Automation:</strong> Set up a simple command-line build script</li>
+                </ol>
+            </div>
+
+            <div class="challenge">
+                <h3>DevOps Integration Challenge</h3>
+                <p>Advanced challenge for experienced DevOps engineers:</p>
+                <ol>
+                    <li><strong>CI/CD Pipeline:</strong> Set up GitHub Actions or Jenkins for automated Unity builds</li>
+                    <li><strong>Automated Testing:</strong> Create unit tests and integrate them into your pipeline</li>
+                    <li><strong>Multi-Platform Builds:</strong> Configure builds for Windows, Linux, and WebGL</li>
+                    <li><strong>Deployment:</strong> Automate deployment to a staging server</li>
+                    <li><strong>Monitoring:</strong> Implement performance monitoring and crash reporting</li>
+                </ol>
+                
+                <div class="alert alert-warning">
+                    <h4>🎯 Success Criteria</h4>
+                    <ul>
+                        <li>Builds complete automatically on every commit</li>
+                        <li>Tests pass before deployment</li>
+                        <li>Artifacts are properly versioned and stored</li>
+                        <li>Performance metrics are collected and monitored</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>2.10 Resources and Tools</h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <div class="alert alert-info">
+                    <h4>🛠️ Development Tools</h4>
+                    <ul>
+                        <li><a href="https://github.com/Unity-Technologies/com.unity.cinemachine" target="_blank">Cinemachine (GitHub)</a></li>
+                        <li><a href="https://github.com/Unity-Technologies/Unity.Mathematics" target="_blank">Unity Mathematics</a></li>
+                        <li><a href="https://docs.unity3d.com/Packages/com.unity.addressables@latest" target="_blank">Addressables Documentation</a></li>
+                    </ul>
+                </div>
+                <div class="alert alert-success">
+                    <h4>🚀 CI/CD Resources</h4>
+                    <ul>
+                        <li><a href="https://game.ci/" target="_blank">GameCI - Unity CI/CD</a></li>
+                        <li><a href="https://github.com/webbertakken/unity-builder" target="_blank">Unity Builder GitHub Action</a></li>
+                        <li><a href="https://docs.unity3d.com/Manual/CommandLineArguments.html" target="_blank">Unity Command Line</a></li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <h4>📊 Monitoring Tools</h4>
+                    <ul>
+                        <li><a href="https://docs.unity3d.com/Manual/Profiler.html" target="_blank">Unity Profiler</a></li>
+                        <li><a href="https://docs.unity3d.com/Manual/MemoryProfiler.html" target="_blank">Memory Profiler</a></li>
+                        <li><a href="https://unity.com/products/unity-analytics" target="_blank">Unity Analytics</a></li>
+                    </ul>
+                </div>
+                <div class="alert alert-danger">
+                    <h4>🔧 Editor Extensions</h4>
+                    <ul>
+                        <li><a href="https://assetstore.unity.com/packages/tools/utilities/odin-inspector-and-serializer-89041" target="_blank">Odin Inspector</a></li>
+                        <li><a href="https://assetstore.unity.com/packages/tools/utilities/rainbow-folders-147843" target="_blank">Rainbow Folders</a></li>
+                        <li><a href="https://assetstore.unity.com/packages/tools/utilities/peek-149410" target="_blank">Peek (Asset Preview)</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>Summary</h2>
+
+            <p>In this chapter, you've learned:</p>
+            <ul>
+                <li>✅ Unity Editor interface and professional workflow setup</li>
+                <li>✅ Proper project structure and organization for team development</li>
+                <li>✅ Git configuration and LFS setup for Unity projects</li>
+                <li>✅ Package management and dependency handling</li>
+                <li>✅ Build automation and CI/CD pipeline integration</li>
+                <li>✅ Performance monitoring and development best practices</li>
+            </ul>
+
+            <p>You now have the foundation for professional Unity development with DevOps best practices. The next chapter will dive into Unity's GameObject and Component system - the heart of Unity's architecture.</p>
+
+            <div class="alert alert-success" style="margin-top: 2rem;">
+                <h3>Next Steps</h3>
+                <p>Before moving to Chapter 3:</p>
+                <ol>
+                    <li>Set up your development environment with proper folder structure</li>
+                    <li>Configure Git and LFS for your Unity project</li>
+                    <li>Install essential packages via Package Manager</li>
+                    <li>Create a custom editor layout for your workflow</li>
+                    <li>Set up basic build automation</li>
+                </ol>
+                <p style="margin-top: 1rem;"><strong>Remember:</strong> Good project setup pays dividends throughout development!</p>
+                
+                <div class="demo-controls" style="margin-top: 1rem;">
+                    <button class="demo-button" onclick="window.location.href='chapter01.html'">
+                        ← Previous Chapter
+                    </button>
+                    <button class="demo-button" onclick="window.location.href='chapter03.html'">
+                        Continue to Chapter 3 →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // Git workflow demonstration
+        function showGitWorkflow(workflow) {
+            const output = document.getElementById('gitWorkflowOutput');
+            let content = '';
+            
+            switch(workflow) {
+                case 'init':
+                    content = `
+<strong>🚀 Initialize Unity Git Repository</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# 1. Initialize repository
+git init
+git lfs install
+
+# 2. Add Unity-specific files
+cp unity.gitignore .gitignore
+cp unity.gitattributes .gitattributes
+
+# 3. Configure Unity for version control
+# Edit → Project Settings → Editor
+# - Version Control Mode: Visible Meta Files
+# - Asset Serialization: Force Text
+
+# 4. Initial commit
+git add .
+git commit -m "Initial Unity project setup
+
+🔧 Project configured for version control
+📦 Essential packages installed
+🗂️  Professional folder structure created"
+                    `;
+                    break;
+                    
+                case 'feature':
+                    content = `
+<strong>🌿 Feature Branch Workflow</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# 1. Create feature branch
+git checkout -b feature/player-movement
+
+# 2. Make changes to Unity scenes and scripts
+# Unity automatically updates .meta files
+
+# 3. Stage changes (including .meta files)
+git add Assets/Scripts/Player/
+git add Assets/Scenes/GameScene.unity
+
+# 4. Commit with descriptive message
+git commit -m "Add basic player movement
+
+✨ Player can move with WASD keys
+🎮 Input handling via new Input System
+🔄 Smooth movement with Rigidbody2D"
+
+# 5. Push feature branch
+git push origin feature/player-movement
+                    `;
+                    break;
+                    
+                case 'merge':
+                    content = `
+<strong>🔄 Merge Strategy for Unity</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# 1. Keep develop branch updated
+git checkout develop
+git pull origin develop
+
+# 2. Merge feature branch
+git checkout feature/player-movement
+git rebase develop  # Clean history
+git checkout develop
+git merge --no-ff feature/player-movement
+
+# 3. Tag releases
+git tag -a v1.0.0 -m "Release version 1.0.0"
+
+# 4. Deploy through CI/CD
+git push origin develop --tags
+
+✅ Automatic build triggered
+✅ Tests run in pipeline
+✅ Deployment to staging
+                    `;
+                    break;
+                    
+                case 'conflicts':
+                    content = `
+<strong>⚠️ Resolve Unity-Specific Conflicts</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Common Unity merge conflicts:
+
+1. Scene files (.unity):
+   - Use Unity's Smart Merge tool
+   - Or recreate conflicted objects manually
+
+2. Prefab files (.prefab):
+   - Similar to scenes, use Smart Merge
+   - Test prefab functionality after merge
+
+3. Project settings:
+   - Usually safe to take "theirs" version
+   - Review settings after merge
+
+# Setup Unity Smart Merge:
+# 1. Install UnityYAMLMerge tool
+# 2. Configure in .gitconfig:
+
+git config merge.unityyamlmerge.name "Unity YAML Merge"
+git config merge.unityyamlmerge.driver "'/path/to/UnityYAMLMerge' merge -p %O %B %A %A"
+git config merge.unityyamlmerge.recursive binary
+
+🔧 Unity will automatically resolve most conflicts
+⚠️  Always test your game after resolving conflicts!
+                    `;
+                    break;
+            }
+            
+            output.innerHTML = content;
+        }
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

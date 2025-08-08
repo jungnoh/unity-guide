@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 1: Unity Fundamentals - Unity Game Development Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">Chapter 1</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html">📚 Introduction</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html" class="active">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html">Ch 3: GameObjects & Components</a></li>
+            <li><a href="chapter04.html">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html">Ch 6: Physics & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+            <h1>Chapter 1: Introduction and Unity Fundamentals</h1>
+            
+            <div class="learning-objectives">
+                <h3>Learning Objectives</h3>
+                <ul>
+                    <li>Understand the fundamental differences between game development and traditional application development</li>
+                    <li>Learn Unity's core architecture and how it relates to your existing development knowledge</li>
+                    <li>Grasp essential game development concepts and terminology</li>
+                    <li>Set up your development environment for Unity development</li>
+                    <li>Create and run your first Unity project</li>
+                </ul>
+            </div>
+
+            <h2>1.1 From Servers to Games: A Paradigm Shift</h2>
+            
+            <p>Your experience as a DevOps engineer has grounded you in architectures built around discrete events—HTTP requests arrive, your servers process them, query databases, return responses, and wait for the next request. This request-response model, combined with stateless services and event-driven architectures, forms the backbone of modern web applications. It's predictable, scalable, and follows patterns you can reason about systematically.</p>
+
+            <p>Game development shatters this familiar paradigm entirely. Instead of waiting for external stimuli, games run in a continuous loop that executes dozens or hundreds of times per second. This <strong>game loop</strong> represents one of the most fundamental shifts you'll encounter transitioning from server development to game development. Rather than responding to user actions, games proactively simulate an entire world, updating physics, rendering graphics, processing input, and managing audio in a carefully orchestrated dance that happens 60 times every second.</p>
+
+            <p>This shift from reactive to proactive execution has profound implications for how you think about performance, state management, and system architecture. In server development, you optimize for throughput and can often sacrifice latency for better resource utilization. In game development, every millisecond counts—if your game loop takes longer than 16.67 milliseconds, players will notice stuttering and poor responsiveness.</p>
+
+            <div class="interactive-demo">
+                <h3>Architecture Comparison</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1rem 0;">
+                    <div>
+                        <h4 style="color: var(--primary-color);">Traditional Web Application Flow</h4>
+                        <pre style="background: var(--surface-color); padding: 1rem;">
+Client Request
+    ↓
+Server Processing
+    ↓
+Database Query
+    ↓
+Response
+    ↓
+Render</pre>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--accent-color);">Game Application Flow</h4>
+                        <pre style="background: var(--surface-color); padding: 1rem;">
+Initialize
+    ↓
+┌─→ Update
+│     ↓
+│   Render
+│     ↓
+└── Input
+(60+ times/second)</pre>
+                    </div>
+                </div>
+                <p>This continuous loop is the heartbeat of every game, running typically at 60 frames per second (FPS) or higher. Instead of waiting for user requests, games actively update their state and render visuals continuously.</p>
+            </div>
+
+            <h3>Key Differences Table</h3>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Web/Server Development</th>
+                        <th>Game Development</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Execution Model</strong></td>
+                        <td>Request-Response</td>
+                        <td>Continuous Loop</td>
+                    </tr>
+                    <tr>
+                        <td><strong>State Management</strong></td>
+                        <td>Stateless/Session-based</td>
+                        <td>Persistent, frame-based</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Performance Focus</strong></td>
+                        <td>Throughput, Latency</td>
+                        <td>Frame rate, Memory</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User Interaction</strong></td>
+                        <td>Events, Forms</td>
+                        <td>Real-time Input</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Debugging</strong></td>
+                        <td>Logs, Breakpoints</td>
+                        <td>Visual debugging, Profilers</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deployment</strong></td>
+                        <td>Containers, Cloud</td>
+                        <td>Platform builds</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>1.2 What is Unity?</h2>
+
+            <p>Unity is fundamentally a comprehensive game engine—a complete development platform that handles the complex, low-level tasks of game development so you can focus on creating your game's unique features and mechanics. Think of it as the equivalent of a full-stack web framework like Django or Rails, but specifically designed for interactive, real-time applications that demand high performance and cross-platform compatibility.</p>
+
+            <p>At its core, Unity provides a visual editor for constructing game scenes, a robust component-based architecture that will feel familiar if you've worked with modern front-end frameworks like React, and a complete runtime system that manages rendering, physics, audio, and input across multiple platforms. The engine includes C# scripting with full .NET support, meaning you can leverage much of your existing C# knowledge while learning Unity-specific APIs and patterns.</p>
+
+            <p>What makes Unity particularly powerful is its abstraction layer that handles platform-specific details. Just as Docker containers abstract away the underlying operating system differences, Unity abstracts the complexities of rendering on different graphics APIs, handling input from various devices, and managing memory across platforms with vastly different capabilities—from mobile devices to high-end gaming PCs.</p>
+
+            <div class="alert alert-info">
+                <h4>Understanding Unity Through Familiar Tools</h4>
+                <p>To help contextualize Unity's role in your development toolkit, consider how it combines aspects of several tools you already know:</p>
+                <ul>
+                    <li><strong>Visual Studio</strong> — Provides a comprehensive IDE with debugging, profiling, and code editing capabilities</li>
+                    <li><strong>React</strong> — Uses a component-based architecture where GameObjects compose functionality from reusable components</li>
+                    <li><strong>Docker</strong> — Abstracts platform differences, allowing you to "build once, run anywhere" across multiple operating systems and hardware configurations</li>
+                    <li><strong>Three.js</strong> — Handles complex 3D rendering, lighting, and graphics programming behind a more approachable API</li>
+                    <li><strong>Express</strong> — Provides a runtime environment that manages the application lifecycle and handles system-level concerns</li>
+                </ul>
+            </div>
+
+            <h3>Unity's Architecture Layers</h3>
+
+            <pre style="text-align: center; font-size: 0.9rem;">
+┌─────────────────────────────────────┐
+│         Your Game Logic (C#)        │
+├─────────────────────────────────────┤
+│        Unity High-Level API         │
+│  (GameObject, Transform, Renderer)  │
+├─────────────────────────────────────┤
+│         Unity Core Systems          │
+│  (Physics, Rendering, Audio, Input) │
+├─────────────────────────────────────┤
+│        Unity Runtime (Mono/.NET)    │
+├─────────────────────────────────────┤
+│      Platform Abstraction Layer     │
+├─────────────────────────────────────┤
+│   OS/Hardware (Windows, iOS, etc.)  │
+└─────────────────────────────────────┘
+            </pre>
+
+            <h2>1.3 Core Game Development Concepts</h2>
+
+            <p>Before diving into Unity specifics, you need to understand several fundamental concepts that are unique to game development. These concepts don't have direct parallels in server or web development, so it's important to grasp them thoroughly as they'll influence every decision you make while developing games.</p>
+
+            <h3>Understanding Frames and Frame Rate</h3>
+            
+            <p>In web development, you think in terms of page loads, API response times, and user interactions. In game development, you think in terms of frames—individual still images displayed in rapid succession to create the illusion of motion, much like frames in a movie. However, unlike movies which typically run at 24 frames per second, games demand much higher frame rates to provide responsive, smooth gameplay.</p>
+
+            <div class="interactive-demo">
+                <h3>Frame Rate and Performance Targets</h3>
+                <p>A <strong>frame</strong> represents one complete cycle of your game's execution—updating all game logic, rendering the visual scene, and presenting it to the player. Different platforms and game types target different frame rates based on player expectations and hardware capabilities:</p>
+                <div class="demo-controls">
+                    <button class="demo-button" onclick="showFrameRate(30)">30 FPS</button>
+                    <button class="demo-button" onclick="showFrameRate(60)">60 FPS</button>
+                    <button class="demo-button" onclick="showFrameRate(120)">120 FPS</button>
+                </div>
+                <div class="demo-output" id="frameRateOutput">
+                    Click a button to see frame timing information
+                </div>
+            </div>
+
+            <h3>The Game Loop in Detail</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Pseudo-code of Unity's game loop
+while (gameIsRunning)
+{
+    // Fixed Update - Physics (50 times per second by default)
+    if (Time.time >= nextFixedUpdate)
+    {
+        FixedUpdate();
+        PhysicsSimulation();
+        nextFixedUpdate += fixedDeltaTime;
+    }
+    
+    // Update - Game logic (every frame)
+    Update();
+    
+    // Late Update - Camera and follow logic
+    LateUpdate();
+    
+    // Rendering
+    Render();
+    
+    // Wait for next frame
+    WaitForTargetFrameRate();
+}</code></pre>
+            </div>
+
+            <h3>Game Objects and Components</h3>
+
+            <p>Unity uses an <strong>Entity-Component-System (ECS)</strong> pattern:</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// In React, you might have:
+&lt;Player 
+    position={{ x: 0, y: 0 }}
+    health={100}
+    sprite="player.png"
+/&gt;
+
+// In Unity, this becomes:
+GameObject player = new GameObject("Player");
+player.AddComponent&lt;Transform&gt;();      // Position, rotation, scale
+player.AddComponent&lt;SpriteRenderer&gt;(); // Visual representation
+player.AddComponent&lt;PlayerHealth&gt;();   // Custom component
+player.AddComponent&lt;Rigidbody2D&gt;();   // Physics</code></pre>
+            </div>
+
+            <h3>Coordinate Systems</h3>
+
+            <div class="alert alert-info">
+                <h4>Unity uses a left-handed coordinate system:</h4>
+                <pre style="margin: 1rem 0; text-align: center;">
+      Y (Up)
+      ↑
+      |
+      |_____ X (Right)
+     /
+    /
+   Z (Forward)</pre>
+                <ul>
+                    <li><strong>X:</strong> Right (positive) / Left (negative)</li>
+                    <li><strong>Y:</strong> Up (positive) / Down (negative)</li>
+                    <li><strong>Z:</strong> Forward (positive) / Backward (negative)</li>
+                </ul>
+            </div>
+
+            <h2>1.4 Unity vs Traditional Development Patterns</h2>
+
+            <h3>Dependency Injection</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <h4>Traditional (.NET Core)</h4>
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre><code class="language-csharp">public class UserService
+{
+    private readonly IDatabase _database;
+    
+    public UserService(IDatabase database)
+    {
+        _database = database;
+    }
+}</code></pre>
+                    </div>
+                </div>
+                <div>
+                    <h4>Unity Approach</h4>
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre><code class="language-csharp">public class PlayerController : MonoBehaviour
+{
+    // Assigned via Inspector or GetComponent
+    private Rigidbody2D _rigidbody;
+    private PlayerHealth _health;
+    
+    void Awake()
+    {
+        _rigidbody = GetComponent&lt;Rigidbody2D&gt;();
+        _health = GetComponent&lt;PlayerHealth&gt;();
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Event Systems</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <h4>Traditional (C# Events)</h4>
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre><code class="language-csharp">public event EventHandler&lt;DataChangedEventArgs&gt; DataChanged;</code></pre>
+                    </div>
+                </div>
+                <div>
+                    <h4>Unity Events</h4>
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre><code class="language-csharp">using UnityEngine.Events;
+
+public class GameManager : MonoBehaviour
+{
+    public UnityEvent&lt;int&gt; OnScoreChanged;
+    
+    void AddScore(int points)
+    {
+        score += points;
+        OnScoreChanged?.Invoke(score);
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Async Operations</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <h4>Traditional (async/await)</h4>
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre><code class="language-csharp">public async Task&lt;Data&gt; FetchDataAsync()
+{
+    return await httpClient.GetAsync&lt;Data&gt;(url);
+}</code></pre>
+                    </div>
+                </div>
+                <div>
+                    <h4>Unity (Coroutines)</h4>
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre><code class="language-csharp">IEnumerator LoadLevel(string levelName)
+{
+    AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(levelName);
+    
+    while (!asyncLoad.isDone)
+    {
+        float progress = asyncLoad.progress;
+        yield return null; // Wait one frame
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h2>1.5 Setting Up Your Development Environment</h2>
+
+            <h3>Required Software</h3>
+
+            <div class="alert alert-warning">
+                <h4>Installation Checklist</h4>
+                <ol>
+                    <li>
+                        <strong>Unity Hub</strong> (Package Manager)
+                        <ul>
+                            <li>Download from: <a href="https://unity.com/download" target="_blank">unity.com/download</a></li>
+                            <li>Similar to Node Version Manager (nvm)</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Unity Editor</strong> (via Unity Hub)
+                        <ul>
+                            <li>Install Unity 2022.3 LTS (Long Term Support)</li>
+                            <li>Include modules: WebGL Build Support, Windows/Mac Build Support, Documentation</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>IDE Options:</strong>
+                        <ul>
+                            <li><strong>Visual Studio 2022</strong> (Windows, recommended)</li>
+                            <li><strong>Visual Studio for Mac</strong> (macOS)</li>
+                            <li><strong>VS Code</strong> with Unity extensions</li>
+                            <li><strong>JetBrains Rider</strong> (paid, excellent Unity support)</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+
+            <h3>IDE Setup for Unity</h3>
+
+            <h4>Visual Studio Code Setup:</h4>
+            
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-json">// .vscode/settings.json
+{
+    "omnisharp.useModernNet": false,
+    "omnisharp.useGlobalMono": "always",
+    "files.exclude": {
+        "**/*.meta": true,
+        "**/*.csproj": true,
+        "**/*.sln": true
+    }
+}</code></pre>
+            </div>
+
+            <p>Install extensions:</p>
+            <ul>
+                <li>C# (Microsoft)</li>
+                <li>Unity Code Snippets</li>
+                <li>Debugger for Unity</li>
+            </ul>
+
+            <h3>Project Settings for Version Control</h3>
+
+            <p>Create <code>.gitignore</code> for Unity projects:</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-gitignore"># Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Memory captures
+[Mm]emoryCaptures/
+
+# Asset meta data
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Unity3D generated file on crash reports
+sysinfo.txt
+
+# Builds
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Crashlytics
+crashlytics-build.properties
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Visual Studio cache
+.vs/
+
+# Rider
+.idea/</code></pre>
+            </div>
+
+            <h2>1.6 Your First Unity Project</h2>
+
+            <h3>Creating a New Project</h3>
+
+            <div class="exercise">
+                <h3>Step-by-Step: Create Your First Project</h3>
+                <ol>
+                    <li>Open Unity Hub</li>
+                    <li>Click "New Project"</li>
+                    <li>Select "2D Core" template (simpler for learning)</li>
+                    <li>Name: "MyFirstUnityGame"</li>
+                    <li>Location: Your preferred development folder</li>
+                    <li>Click "Create Project"</li>
+                </ol>
+            </div>
+
+            <h3>Unity Editor Overview</h3>
+
+            <p>When Unity opens, you'll see several panels:</p>
+
+            <pre style="text-align: center; font-size: 0.85rem;">
+┌─────────────────────────────────────────────────┐
+│  File  Edit  Assets  GameObject  Component ...  │
+├───────────┬─────────────────┬──────────────────┤
+│           │                 │                  │
+│ Hierarchy │      Scene      │    Inspector     │
+│           │                 │                  │
+│  Canvas   │   ┌──────┐      │  Transform       │
+│  └─Text   │   │ Text │      │   Position: 0,0  │
+│           │   └──────┘      │   Rotation: 0    │
+│           │                 │                  │
+├───────────┴─────────────────┼──────────────────┤
+│                             │                  │
+│         Project             │     Console      │
+│   Assets/  Packages/        │                  │
+│                             │                  │
+└─────────────────────────────┴──────────────────┘
+            </pre>
+
+            <div class="alert alert-info">
+                <h4>Key Panels:</h4>
+                <ul>
+                    <li><strong>Hierarchy:</strong> Scene structure (like React component tree)</li>
+                    <li><strong>Scene:</strong> Visual editor</li>
+                    <li><strong>Inspector:</strong> Component properties (like React DevTools)</li>
+                    <li><strong>Project:</strong> File browser</li>
+                    <li><strong>Console:</strong> Logs and errors</li>
+                </ul>
+            </div>
+
+            <h3>Creating Your First Script</h3>
+
+            <div class="interactive-demo">
+                <h3>Hello Unity Script</h3>
+                <ol>
+                    <li>In Project panel: Right-click → Create → C# Script</li>
+                    <li>Name it "HelloUnity"</li>
+                    <li>Double-click to open in your IDE</li>
+                </ol>
+
+                <div class="code-container">
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <pre><code class="language-csharp">using UnityEngine;
+
+public class HelloUnity : MonoBehaviour
+{
+    // Called once when the GameObject becomes active
+    void Start()
+    {
+        Debug.Log("Hello from Unity!");
+        Debug.Log($"This GameObject is named: {gameObject.name}");
+        Debug.Log($"Running at {Application.targetFrameRate} FPS");
+    }
+    
+    // Called every frame
+    void Update()
+    {
+        // Rotate the object 45 degrees per second
+        transform.Rotate(0, 0, 45 * Time.deltaTime);
+    }
+}</code></pre>
+                </div>
+
+                <h4>Attaching the Script</h4>
+                <ol>
+                    <li>In Hierarchy: Right-click → Create Empty</li>
+                    <li>Name it "MyFirstObject"</li>
+                    <li>Select "MyFirstObject"</li>
+                    <li>In Inspector: Add Component → Scripts → HelloUnity</li>
+                    <li>Press Play button (▶) at the top</li>
+                </ol>
+
+                <p>You should see:</p>
+                <ul>
+                    <li>Console logs your messages</li>
+                    <li>The object rotating in the Scene view</li>
+                </ul>
+            </div>
+
+            <h3>Understanding MonoBehaviour Lifecycle</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">public class LifecycleDemo : MonoBehaviour
+{
+    // Initialization - called once
+    void Awake()
+    {
+        // Called first, even if GameObject is inactive
+        // Use for internal initialization
+    }
+    
+    void OnEnable()
+    {
+        // Called when GameObject becomes active
+        // Subscribe to events here
+    }
+    
+    void Start()
+    {
+        // Called before first Update
+        // Use for initialization that depends on other objects
+    }
+    
+    // Game Loop - called repeatedly
+    void FixedUpdate()
+    {
+        // Physics updates (50Hz by default)
+        // Use for physics calculations
+    }
+    
+    void Update()
+    {
+        // Called every frame
+        // Use for game logic, input
+    }
+    
+    void LateUpdate()
+    {
+        // Called after all Updates
+        // Use for camera follow, UI updates
+    }
+    
+    // Deinitialization
+    void OnDisable()
+    {
+        // Called when GameObject becomes inactive
+        // Unsubscribe from events
+    }
+    
+    void OnDestroy()
+    {
+        // Called when GameObject is destroyed
+        // Cleanup resources
+    }
+}</code></pre>
+            </div>
+
+            <div class="interactive-demo">
+                <h3>Lifecycle Interactive Demo</h3>
+                <p>Click the buttons to see when each lifecycle method is called:</p>
+                <div class="demo-controls">
+                    <button class="demo-button" onclick="simulateLifecycle('create')">Create GameObject</button>
+                    <button class="demo-button" onclick="simulateLifecycle('enable')">Enable</button>
+                    <button class="demo-button" onclick="simulateLifecycle('disable')">Disable</button>
+                    <button class="demo-button" onclick="simulateLifecycle('destroy')">Destroy</button>
+                </div>
+                <div class="demo-output" id="lifecycleOutput">
+                    Lifecycle events will appear here...
+                </div>
+            </div>
+
+            <h2>1.7 Essential Unity Concepts for Developers</h2>
+
+            <h3>Serialization and the Inspector</h3>
+
+            <p>Unity automatically serializes public fields and <code>[SerializeField]</code> private fields:</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">public class PlayerStats : MonoBehaviour
+{
+    // Visible in Inspector
+    public int maxHealth = 100;
+    
+    // Also visible in Inspector (preferred)
+    [SerializeField] private int currentHealth = 100;
+    
+    // Not visible in Inspector
+    private int internalValue = 42;
+    
+    // Not serialized (despite being public)
+    [System.NonSerialized]
+    public int runtimeOnly = 0;
+    
+    // Visible as read-only in Inspector
+    public int Health => currentHealth;
+    
+    // Custom Inspector display
+    [Header("Combat Stats")]
+    [Range(0, 100)]
+    public float criticalChance = 15f;
+    
+    [Tooltip("Damage multiplier on critical hit")]
+    public float criticalMultiplier = 2f;
+}</code></pre>
+            </div>
+
+            <h3>Prefabs: Unity's Component Templates</h3>
+
+            <p>Prefabs are like React component definitions that can be instantiated:</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">public class EnemySpawner : MonoBehaviour
+{
+    // Assign in Inspector
+    [SerializeField] private GameObject enemyPrefab;
+    [SerializeField] private Transform[] spawnPoints;
+    
+    void SpawnEnemy()
+    {
+        // Instantiate from prefab
+        GameObject enemy = Instantiate(enemyPrefab);
+        
+        // Set position
+        int randomIndex = Random.Range(0, spawnPoints.Length);
+        enemy.transform.position = spawnPoints[randomIndex].position;
+        
+        // Configure the instance
+        enemy.GetComponent&lt;Enemy&gt;().SetDifficulty(currentWave);
+    }
+}</code></pre>
+            </div>
+
+            <h3>Tags and Layers</h3>
+
+            <p>Tags and Layers help identify and categorize GameObjects:</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">public class PlayerController : MonoBehaviour
+{
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        // Check tag
+        if (other.CompareTag("Enemy"))
+        {
+            TakeDamage(10);
+        }
+        else if (other.CompareTag("Pickup"))
+        {
+            CollectItem(other.gameObject);
+        }
+    }
+    
+    void Start()
+    {
+        // Find objects by tag
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        
+        // Layer-based physics ignore
+        int playerLayer = LayerMask.NameToLayer("Player");
+        int pickupLayer = LayerMask.NameToLayer("Pickup");
+        Physics2D.IgnoreLayerCollision(playerLayer, pickupLayer);
+    }
+}</code></pre>
+            </div>
+
+            <h2>1.8 Common Patterns and Best Practices</h2>
+
+            <h3>Singleton Pattern in Unity</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">public class GameManager : MonoBehaviour
+{
+    private static GameManager _instance;
+    
+    public static GameManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = FindObjectOfType&lt;GameManager&gt;();
+                
+                if (_instance == null)
+                {
+                    GameObject go = new GameObject("GameManager");
+                    _instance = go.AddComponent&lt;GameManager&gt;();
+                }
+            }
+            return _instance;
+        }
+    }
+    
+    void Awake()
+    {
+        if (_instance != null && _instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        _instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+}</code></pre>
+            </div>
+
+            <h3>Object Pooling</h3>
+
+            <p>Instead of instantiating/destroying frequently (like bullets), reuse objects:</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">public class BulletPool : MonoBehaviour
+{
+    [SerializeField] private GameObject bulletPrefab;
+    [SerializeField] private int poolSize = 20;
+    
+    private Queue&lt;GameObject&gt; pool = new Queue&lt;GameObject&gt;();
+    
+    void Start()
+    {
+        for (int i = 0; i &lt; poolSize; i++)
+        {
+            GameObject bullet = Instantiate(bulletPrefab);
+            bullet.SetActive(false);
+            pool.Enqueue(bullet);
+        }
+    }
+    
+    public GameObject GetBullet()
+    {
+        if (pool.Count &gt; 0)
+        {
+            GameObject bullet = pool.Dequeue();
+            bullet.SetActive(true);
+            return bullet;
+        }
+        else
+        {
+            return Instantiate(bulletPrefab);
+        }
+    }
+    
+    public void ReturnBullet(GameObject bullet)
+    {
+        bullet.SetActive(false);
+        pool.Enqueue(bullet);
+    }
+}</code></pre>
+            </div>
+
+            <h3>Event-Driven Architecture</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Event Manager
+public static class EventManager
+{
+    public static event System.Action&lt;int&gt; OnScoreChanged;
+    public static event System.Action OnPlayerDied;
+    public static event System.Action&lt;string&gt; OnLevelCompleted;
+    
+    public static void TriggerScoreChanged(int newScore)
+    {
+        OnScoreChanged?.Invoke(newScore);
+    }
+    
+    public static void TriggerPlayerDied()
+    {
+        OnPlayerDied?.Invoke();
+    }
+}
+
+// UI Controller
+public class UIController : MonoBehaviour
+{
+    void OnEnable()
+    {
+        EventManager.OnScoreChanged += UpdateScoreDisplay;
+        EventManager.OnPlayerDied += ShowGameOverScreen;
+    }
+    
+    void OnDisable()
+    {
+        EventManager.OnScoreChanged -= UpdateScoreDisplay;
+        EventManager.OnPlayerDied -= ShowGameOverScreen;
+    }
+}</code></pre>
+            </div>
+
+            <h2>1.9 Debugging in Unity</h2>
+
+            <h3>Debug Class</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">public class DebugExample : MonoBehaviour
+{
+    void Start()
+    {
+        // Basic logging
+        Debug.Log("Information message");
+        Debug.LogWarning("Warning message");
+        Debug.LogError("Error message");
+        
+        // Formatted logging
+        Debug.LogFormat("Player {0} scored {1} points", playerName, score);
+        
+        // Conditional logging
+        Debug.Assert(health &gt; 0, "Health should never be negative!");
+        
+        // Visual debugging
+        Debug.DrawLine(transform.position, target.position, Color.red);
+        Debug.DrawRay(transform.position, transform.forward * 10, Color.blue);
+    }
+    
+    void OnDrawGizmos()
+    {
+        // Draw debug visuals in Scene view
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, detectionRadius);
+    }
+}</code></pre>
+            </div>
+
+            <h3>Conditional Compilation</h3>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">public class BuildConfiguration : MonoBehaviour
+{
+    void Start()
+    {
+        #if UNITY_EDITOR
+            Debug.Log("Running in Unity Editor");
+            // Editor-only code
+        #elif UNITY_STANDALONE
+            Debug.Log("Running as standalone build");
+        #elif UNITY_WEBGL
+            Debug.Log("Running in WebGL");
+        #endif
+        
+        #if DEBUG
+            EnableDebugMode();
+        #endif
+    }
+}</code></pre>
+            </div>
+
+            <h2>1.10 Exercises</h2>
+
+            <div class="exercise">
+                <h3>Quick Check Questions</h3>
+                <ol>
+                    <li>What is the main difference between Unity's game loop and a web server's request-response cycle?</li>
+                    <li>How does Unity's component system relate to React components?</li>
+                    <li>What is the difference between <code>Update()</code> and <code>FixedUpdate()</code>?</li>
+                    <li>Why might you use <code>[SerializeField]</code> instead of public fields?</li>
+                    <li>What is a prefab and how is it similar to a component template?</li>
+                </ol>
+            </div>
+
+            <div class="exercise">
+                <h3>Hands-On Exercise: Bouncing Ball</h3>
+                <p>Create a simple bouncing ball that:</p>
+                <ol>
+                    <li>Falls due to gravity</li>
+                    <li>Bounces when hitting the ground</li>
+                    <li>Can be launched upward with spacebar</li>
+                </ol>
+
+                <h4>Steps:</h4>
+                <ol>
+                    <li>Create a new 2D project</li>
+                    <li>Add a Circle sprite (GameObject → 2D Object → Sprites → Circle)</li>
+                    <li>Add Rigidbody2D component</li>
+                    <li>Add a ground (stretched Square sprite with BoxCollider2D)</li>
+                    <li>Create and attach this script:</li>
+                </ol>
+
+                <div class="code-container">
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <pre><code class="language-csharp">using UnityEngine;
+
+public class BouncingBall : MonoBehaviour
+{
+    [SerializeField] private float jumpForce = 10f;
+    private Rigidbody2D rb;
+    
+    void Start()
+    {
+        rb = GetComponent&lt;Rigidbody2D&gt;();
+    }
+    
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            rb.velocity = Vector2.up * jumpForce;
+        }
+    }
+}</code></pre>
+                </div>
+
+                <p>6. Add a Physics Material 2D to the ball's collider with bounciness = 0.8</p>
+            </div>
+
+            <div class="challenge">
+                <h3>Challenge Project: Simple Clicker Game</h3>
+                <p>Build a cookie clicker-style game:</p>
+                <ul>
+                    <li>Display a score</li>
+                    <li>Click a button/sprite to increase score</li>
+                    <li>Score persists between play sessions</li>
+                    <li>Add a multiplier upgrade button</li>
+                </ul>
+
+                <h4>Hints:</h4>
+                <ul>
+                    <li>Use <code>PlayerPrefs</code> for persistence</li>
+                    <li>Use Unity UI for buttons and text</li>
+                    <li>Implement upgrade system with cost scaling</li>
+                </ul>
+            </div>
+
+            <h2>1.11 Resources and Further Reading</h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <div class="alert alert-info">
+                    <h4>Official Documentation</h4>
+                    <ul>
+                        <li><a href="https://docs.unity3d.com/Manual/" target="_blank">Unity Manual</a></li>
+                        <li><a href="https://docs.unity3d.com/ScriptReference/" target="_blank">Unity Scripting API</a></li>
+                        <li><a href="https://learn.unity.com/" target="_blank">Unity Learn</a></li>
+                    </ul>
+                </div>
+                <div class="alert alert-success">
+                    <h4>Recommended Tutorials</h4>
+                    <ul>
+                        <li><a href="https://www.youtube.com/c/Brackeys" target="_blank">Brackeys (YouTube)</a></li>
+                        <li><a href="https://www.youtube.com/c/CodeMonkeyUnity" target="_blank">Code Monkey (YouTube)</a></li>
+                        <li><a href="https://gameprogrammingpatterns.com/" target="_blank">Game Programming Patterns</a></li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <h4>Asset Resources</h4>
+                    <ul>
+                        <li><a href="https://assetstore.unity.com/" target="_blank">Unity Asset Store</a></li>
+                        <li><a href="https://opengameart.org/" target="_blank">OpenGameArt</a></li>
+                        <li><a href="https://kenney.nl/assets" target="_blank">Kenney Assets (Free)</a></li>
+                    </ul>
+                </div>
+                <div class="alert alert-danger">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://forum.unity.com/" target="_blank">Unity Forum</a></li>
+                        <li><a href="https://www.reddit.com/r/Unity3D/" target="_blank">Unity Subreddit</a></li>
+                        <li><a href="https://stackoverflow.com/questions/tagged/unity3d" target="_blank">Stack Overflow</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>Summary</h2>
+
+            <p>In this chapter, you've learned:</p>
+            <ul>
+                <li>✅ The fundamental differences between game and traditional development</li>
+                <li>✅ Unity's architecture and core systems</li>
+                <li>✅ The game loop and frame-based execution</li>
+                <li>✅ MonoBehaviour lifecycle and component system</li>
+                <li>✅ Basic debugging and best practices</li>
+            </ul>
+
+            <p>You now have a foundation for understanding Unity development through the lens of your existing programming knowledge. In the next chapter, we'll dive deeper into the Unity Editor and project organization, learning how to efficiently navigate and structure Unity projects like the DevOps engineer you are.</p>
+
+            <div class="alert alert-success" style="margin-top: 2rem;">
+                <h3>Next Steps</h3>
+                <p>Before moving to Chapter 2:</p>
+                <ol>
+                    <li>Complete the hands-on exercise</li>
+                    <li>Explore the Unity Editor interface</li>
+                    <li>Try modifying the example scripts</li>
+                    <li>Set up version control for your project</li>
+                    <li>Join the Unity community forums</li>
+                </ol>
+                <p style="margin-top: 1rem;"><strong>Remember:</strong> Game development is iterative. Don't aim for perfection—aim for playable, then improve!</p>
+                
+                <div class="demo-controls" style="margin-top: 1rem;">
+                    <button class="demo-button" onclick="window.location.href='chapter02.html'">
+                        Continue to Chapter 2 →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // Frame rate demonstration
+        function showFrameRate(fps) {
+            const msPerFrame = 1000 / fps;
+            const output = document.getElementById('frameRateOutput');
+            output.innerHTML = `
+<strong>${fps} FPS (Frames Per Second)</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Frame time: ${msPerFrame.toFixed(2)}ms per frame
+• Frames per second: ${fps}
+• Common use: ${fps === 30 ? 'Console standard' : fps === 60 ? 'PC standard' : 'Competitive gaming'}
+
+In web terms: Imagine if every React render had to 
+complete in ${msPerFrame.toFixed(2)}ms, including all computations!`;
+        }
+
+        // Lifecycle demonstration
+        let lifecycleState = null;
+        function simulateLifecycle(action) {
+            const output = document.getElementById('lifecycleOutput');
+            let messages = [];
+            
+            switch(action) {
+                case 'create':
+                    messages = [
+                        '→ GameObject created',
+                        '→ Awake() called',
+                        '→ OnEnable() called',
+                        '→ Start() called',
+                        '→ Now entering game loop (Update/FixedUpdate/LateUpdate)...'
+                    ];
+                    lifecycleState = 'active';
+                    break;
+                case 'enable':
+                    if (lifecycleState === 'disabled') {
+                        messages = [
+                            '→ GameObject enabled',
+                            '→ OnEnable() called',
+                            '→ Re-entering game loop...'
+                        ];
+                        lifecycleState = 'active';
+                    } else {
+                        messages = ['⚠ GameObject is already enabled'];
+                    }
+                    break;
+                case 'disable':
+                    if (lifecycleState === 'active') {
+                        messages = [
+                            '→ GameObject disabled',
+                            '→ OnDisable() called',
+                            '→ Exiting game loop'
+                        ];
+                        lifecycleState = 'disabled';
+                    } else {
+                        messages = ['⚠ GameObject is not active'];
+                    }
+                    break;
+                case 'destroy':
+                    if (lifecycleState) {
+                        messages = [
+                            '→ Destroying GameObject',
+                            lifecycleState === 'active' ? '→ OnDisable() called' : '',
+                            '→ OnDestroy() called',
+                            '→ GameObject removed from scene'
+                        ].filter(m => m);
+                        lifecycleState = null;
+                    } else {
+                        messages = ['⚠ No GameObject to destroy'];
+                    }
+                    break;
+            }
+            
+            output.innerHTML = messages.join('\n');
+        }
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

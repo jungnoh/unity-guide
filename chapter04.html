@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 4: C# Scripting in Unity - Unity Game Development Guide</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">Chapter 4</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html">📚 Introduction</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html">Ch 3: GameObjects & Components</a></li>
+            <li><a href="chapter04.html" class="active">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html">Ch 6: Physics & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+            <h1>Chapter 4: C# Scripting in Unity</h1>
+            
+            <div class="learning-objectives">
+                <h3>Learning Objectives</h3>
+                <ul>
+                    <li>Understand Unity's C# environment and how it differs from standard .NET development</li>
+                    <li>Master the MonoBehaviour lifecycle and Unity's execution order</li>
+                    <li>Learn Unity's approach to coroutines as an alternative to async/await</li>
+                    <li>Implement effective debugging and testing strategies for Unity projects</li>
+                    <li>Apply SOLID principles and design patterns to Unity game development</li>
+                    <li>Understand Unity's serialization system and Inspector integration</li>
+                </ul>
+            </div>
+
+            <h2>4.1 Unity C# Environment and Differences from Standard .NET</h2>
+            
+            <p>Your experience with C# and .NET Core provides an excellent foundation for Unity development, but Unity's implementation of C# has some important differences and limitations that you need to understand. Unity uses a custom implementation of the .NET runtime called Unity's scripting backend, which supports most C# language features but with some notable exceptions and Unity-specific behaviors.</p>
+
+            <p>Unity currently supports C# language version 9.0 features, which means you can use modern C# syntax like pattern matching, null-coalescing operators, expression-bodied members, and local functions. However, Unity's runtime environment differs from standard .NET in several key ways that affect how you write and structure your code.</p>
+
+            <p>The most significant difference is Unity's component-based execution model. Instead of having a traditional main method and explicit control flow, Unity manages the execution of your code through component lifecycle methods. This means your code runs in response to Unity's game loop rather than following a linear execution path you control directly.</p>
+
+            <div class="alert alert-info">
+                <h4>Key Differences from Standard .NET Development</h4>
+                <p>Understanding these differences will help you adapt your existing C# knowledge to Unity's environment:</p>
+                <ul>
+                    <li><strong>Execution Model:</strong> Frame-based execution through component lifecycle methods instead of traditional application entry points</li>
+                    <li><strong>Garbage Collection:</strong> Unity uses a custom garbage collector optimized for real-time applications, requiring different memory management strategies</li>
+                    <li><strong>Async Operations:</strong> Coroutines are preferred over async/await for game-specific asynchronous operations</li>
+                    <li><strong>Serialization:</strong> Unity's custom serialization system replaces .NET's standard serialization mechanisms</li>
+                    <li><strong>Threading:</strong> Most Unity APIs are not thread-safe and must be called from the main thread</li>
+                </ul>
+            </div>
+
+            <h3>Unity's Scripting Backends</h3>
+
+            <p>Unity offers different scripting backends that affect how your C# code is compiled and executed. Understanding these options helps you make informed decisions about performance and platform compatibility, especially when deploying to different target platforms.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                <div class="alert alert-info">
+                    <h4>🔧 Mono Backend</h4>
+                    <p>Unity's traditional scripting backend, based on the open-source Mono runtime:</p>
+                    <ul>
+                        <li><strong>Advantages:</strong> Fast compilation, good debugging support, smaller builds</li>
+                        <li><strong>Disadvantages:</strong> Slower runtime performance, limited platform support</li>
+                        <li><strong>Best for:</strong> Development builds, rapid iteration, older platforms</li>
+                        <li><strong>Platform support:</strong> Desktop, mobile, some consoles</li>
+                    </ul>
+                </div>
+                <div class="alert alert-success">
+                    <h4>⚡ IL2CPP Backend</h4>
+                    <p>Unity's ahead-of-time (AOT) compilation system that converts C# to C++:</p>
+                    <ul>
+                        <li><strong>Advantages:</strong> Better runtime performance, broader platform support, smaller memory footprint</li>
+                        <li><strong>Disadvantages:</strong> Slower compilation, some reflection limitations, larger build times</li>
+                        <li><strong>Best for:</strong> Release builds, performance-critical applications, console deployment</li>
+                        <li><strong>Platform support:</strong> All Unity-supported platforms</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>4.2 MonoBehaviour Lifecycle Deep Dive</h2>
+
+            <p>The MonoBehaviour lifecycle represents the heart of Unity's execution model and differs significantly from traditional application lifecycle management. Instead of controlling when your code runs through explicit method calls or event loops, Unity manages execution for you by calling predefined lifecycle methods on your components at appropriate times during each frame.</p>
+
+            <p>Understanding this lifecycle is crucial because it determines when your code executes relative to other systems like physics, rendering, and input processing. Getting the lifecycle wrong can lead to race conditions, performance issues, and unpredictable behavior—problems that are often difficult to debug.</p>
+
+            <p>The lifecycle follows a predictable pattern that mirrors many frameworks you might know from web development, with distinct phases for initialization, continuous updates, and cleanup. However, Unity's lifecycle is frame-based rather than event-based, meaning these methods are called at specific points during each frame's execution.</p>
+
+            <div class="interactive-demo">
+                <h3>MonoBehaviour Lifecycle Visualization</h3>
+                <p>Click through the lifecycle phases to see when each method is called and what it's used for:</p>
+                <div class="demo-controls">
+                    <button class="demo-button" onclick="showLifecyclePhase('initialization')">Initialization</button>
+                    <button class="demo-button" onclick="showLifecyclePhase('frame-loop')">Frame Loop</button>
+                    <button class="demo-button" onclick="showLifecyclePhase('physics')">Physics</button>
+                    <button class="demo-button" onclick="showLifecyclePhase('rendering')">Rendering</button>
+                    <button class="demo-button" onclick="showLifecyclePhase('cleanup')">Cleanup</button>
+                </div>
+                <div class="demo-output" id="lifecycleOutput">
+                    Click a button to explore different phases of the MonoBehaviour lifecycle
+                </div>
+            </div>
+
+            <h3>Understanding Execution Order</h3>
+
+            <p>One of the most important aspects of Unity development is understanding when your code runs relative to other components and Unity's internal systems. Unlike traditional applications where you control the execution flow explicitly, Unity manages execution order based on several factors that you need to understand to avoid timing-related bugs.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Complete MonoBehaviour lifecycle example
+using UnityEngine;
+
+public class LifecycleExample : MonoBehaviour
+{
+    [Header("Component Configuration")]
+    [SerializeField] private float updateCounter = 0f;
+    [SerializeField] private bool logLifecycleEvents = true;
+    
+    // Initialization Phase - Called once when the component is created
+    void Awake()
+    {
+        // Called first, even if the GameObject is inactive
+        // Use for internal initialization that doesn't depend on other objects
+        if (logLifecycleEvents) Debug.Log($"{name}: Awake() - Component initialization");
+        
+        // Initialize variables, get component references
+        updateCounter = 0f;
+    }
+    
+    void OnEnable()
+    {
+        // Called when the GameObject becomes active and enabled
+        // Use for subscribing to events, starting coroutines
+        if (logLifecycleEvents) Debug.Log($"{name}: OnEnable() - GameObject activated");
+        
+        // Subscribe to events
+        // Start coroutines that should run while this object is active
+    }
+    
+    void Start()
+    {
+        // Called before the first frame update, after all Awake() calls
+        // Use for initialization that depends on other objects being initialized
+        if (logLifecycleEvents) Debug.Log($"{name}: Start() - Ready for updates");
+        
+        // Initialize relationships with other objects
+        // Setup initial state that depends on the scene being fully loaded
+    }
+    
+    // Main Game Loop - Called every frame
+    void Update()
+    {
+        // Called once per frame
+        // Use for game logic, input handling, non-physics updates
+        updateCounter += Time.deltaTime;
+        
+        // Example: Handle input
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Debug.Log($"{name}: Space key pressed at frame {Time.frameCount}");
+        }
+    }
+    
+    void FixedUpdate()
+    {
+        // Called at fixed intervals (usually 50Hz)
+        // Use for physics-related updates, consistent timing needed
+        
+        // Example: Apply forces, move rigidbodies
+        // This runs independently of framerate for consistent physics
+    }
+    
+    void LateUpdate()
+    {
+        // Called after all Update() methods have completed
+        // Use for camera following, UI updates that depend on object positions
+        
+        // Example: Update camera to follow player after player has moved
+    }
+    
+    // Rendering Phase - Called during rendering
+    void OnPreRender()
+    {
+        // Called before the camera renders the scene
+        // Use for custom rendering setup
+    }
+    
+    void OnRenderObject()
+    {
+        // Called for each camera that renders the object
+        // Use for custom rendering with Graphics.DrawMesh etc.
+    }
+    
+    void OnPostRender()
+    {
+        // Called after the camera finishes rendering
+        // Use for post-processing effects
+    }
+    
+    // Physics Callbacks - Called during physics simulation
+    void OnTriggerEnter(Collider other)
+    {
+        if (logLifecycleEvents) Debug.Log($"{name}: Trigger entered by {other.name}");
+    }
+    
+    void OnCollisionEnter(Collision collision)
+    {
+        if (logLifecycleEvents) Debug.Log($"{name}: Collision with {collision.gameObject.name}");
+    }
+    
+    // Cleanup Phase - Called when the object is being destroyed
+    void OnDisable()
+    {
+        // Called when the GameObject becomes inactive
+        // Use for unsubscribing from events, stopping coroutines
+        if (logLifecycleEvents) Debug.Log($"{name}: OnDisable() - GameObject deactivated");
+        
+        // Unsubscribe from events to prevent memory leaks
+        // Stop coroutines started in OnEnable
+    }
+    
+    void OnDestroy()
+    {
+        // Called when the GameObject is destroyed
+        // Use for final cleanup, releasing resources
+        if (logLifecycleEvents) Debug.Log($"{name}: OnDestroy() - Component destroyed");
+        
+        // Release any unmanaged resources
+        // Final cleanup that needs to happen before garbage collection
+    }
+    
+    // GUI and Gizmos - Called for editor and debug rendering
+    void OnGUI()
+    {
+        // Called multiple times per frame for immediate mode GUI
+        // Use sparingly due to performance implications
+        if (logLifecycleEvents)
+        {
+            GUI.Label(new Rect(10, 10, 200, 20), $"Update Counter: {updateCounter:F2}");
+        }
+    }
+    
+    void OnDrawGizmos()
+    {
+        // Called every frame in the Scene view
+        // Use for debug visualization
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, 1f);
+    }
+}</code></pre>
+            </div>
+
+            <h2>4.3 Coroutines vs Async/Await in Unity</h2>
+
+            <p>Coming from modern .NET development, you're likely familiar with async/await patterns for handling asynchronous operations. Unity provides coroutines as its primary mechanism for handling time-based operations and asynchronous tasks, though recent Unity versions also support async/await with some limitations.</p>
+
+            <p>Coroutines are Unity's answer to asynchronous programming, but they work quite differently from the async/await patterns you know. While async/await uses the Task Parallel Library and runs on different threads, Unity coroutines execute on the main thread and integrate seamlessly with Unity's frame-based execution model.</p>
+
+            <p>The key advantage of coroutines in Unity is their tight integration with the game loop. They can yield execution at specific points (like waiting for a frame, waiting for a specific amount of time, or waiting for a condition to be met) and then resume exactly where they left off. This makes them perfect for animations, timed sequences, and other game-specific asynchronous operations.</p>
+
+            <h3>Understanding Coroutines</h3>
+
+            <p>Coroutines are functions that can pause execution and return control to Unity, then continue from where they left off in a later frame. This is conceptually similar to JavaScript's generators or Python's generator functions, if you've worked with those technologies.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Comprehensive coroutine examples
+using System.Collections;
+using UnityEngine;
+
+public class CoroutineExamples : MonoBehaviour
+{
+    [Header("Coroutine Configuration")]
+    [SerializeField] private float animationDuration = 2f;
+    [SerializeField] private AnimationCurve movementCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    
+    void Start()
+    {
+        // Start various coroutine examples
+        StartCoroutine(BasicTimerExample());
+        StartCoroutine(AnimationExample());
+        StartCoroutine(ConditionalWaitExample());
+    }
+    
+    // Basic coroutine - wait for time
+    IEnumerator BasicTimerExample()
+    {
+        Debug.Log("Timer started");
+        
+        // Wait for 3 seconds
+        yield return new WaitForSeconds(3f);
+        
+        Debug.Log("Timer finished - 3 seconds have passed");
+        
+        // Wait for the next frame
+        yield return null;
+        
+        Debug.Log("One frame later");
+        
+        // Wait for end of frame (after rendering)
+        yield return new WaitForEndOfFrame();
+        
+        Debug.Log("After rendering is complete");
+    }
+    
+    // Animation using coroutines
+    IEnumerator AnimationExample()
+    {
+        Vector3 startPosition = transform.position;
+        Vector3 endPosition = startPosition + Vector3.right * 5f;
+        
+        float elapsedTime = 0f;
+        
+        Debug.Log("Starting position animation");
+        
+        // Animate over specified duration
+        while (elapsedTime &lt; animationDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float progress = elapsedTime / animationDuration;
+            
+            // Use animation curve for smooth movement
+            float curveValue = movementCurve.Evaluate(progress);
+            transform.position = Vector3.Lerp(startPosition, endPosition, curveValue);
+            
+            // Wait for next frame
+            yield return null;
+        }
+        
+        // Ensure we end exactly at target position
+        transform.position = endPosition;
+        Debug.Log("Animation complete");
+    }
+    
+    // Wait for a condition to be met
+    IEnumerator ConditionalWaitExample()
+    {
+        Debug.Log("Waiting for player to press spacebar...");
+        
+        // Wait until condition is met
+        yield return new WaitUntil(() =&gt; Input.GetKeyDown(KeyCode.Space));
+        
+        Debug.Log("Spacebar pressed!");
+        
+        // Wait while condition is true
+        yield return new WaitWhile(() =&gt; Input.GetKey(KeyCode.Space));
+        
+        Debug.Log("Spacebar released!");
+    }
+    
+    // Chaining coroutines
+    IEnumerator ChainedCoroutines()
+    {
+        Debug.Log("Starting sequence");
+        
+        // Start one coroutine and wait for it to complete
+        yield return StartCoroutine(BasicTimerExample());
+        
+        Debug.Log("First coroutine finished, starting second");
+        
+        // Start another coroutine
+        yield return StartCoroutine(AnimationExample());
+        
+        Debug.Log("All coroutines completed");
+    }
+    
+    // Coroutine with parameters and return values (using Coroutine reference)
+    IEnumerator LoadDataCoroutine(string dataId, System.Action&lt;string&gt; onComplete)
+    {
+        Debug.Log($"Loading data: {dataId}");
+        
+        // Simulate network request or file loading
+        float loadTime = Random.Range(1f, 3f);
+        yield return new WaitForSeconds(loadTime);
+        
+        // Simulate loaded data
+        string loadedData = $"Data for {dataId} - loaded in {loadTime:F2}s";
+        
+        // Call completion callback
+        onComplete?.Invoke(loadedData);
+    }
+    
+    // Managing coroutines
+    private Coroutine currentAnimation;
+    
+    public void StartManagedAnimation()
+    {
+        // Stop existing animation if running
+        if (currentAnimation != null)
+        {
+            StopCoroutine(currentAnimation);
+        }
+        
+        // Start new animation and keep reference
+        currentAnimation = StartCoroutine(AnimationExample());
+    }
+    
+    public void StopManagedAnimation()
+    {
+        if (currentAnimation != null)
+        {
+            StopCoroutine(currentAnimation);
+            currentAnimation = null;
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3>When to Use Coroutines vs Async/Await</h3>
+
+            <p>Understanding when to use each approach is crucial for effective Unity development. While both can handle asynchronous operations, they excel in different scenarios and have different performance characteristics and limitations.</p>
+
+            <div class="alert alert-warning">
+                <h4>Coroutines vs Async/Await Decision Matrix</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1rem 0;">
+                    <div>
+                        <h5 style="color: var(--accent-color);">Use Coroutines For:</h5>
+                        <ul>
+                            <li>Frame-based operations and animations</li>
+                            <li>Waiting for Unity-specific conditions (input, collision, etc.)</li>
+                            <li>Game loops and timed sequences</li>
+                            <li>Operations that need to integrate with Unity's lifecycle</li>
+                            <li>Simple asynchronous operations without complex error handling</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h5 style="color: var(--primary-color);">Use Async/Await For:</h5>
+                        <ul>
+                            <li>Network requests and file I/O operations</li>
+                            <li>Complex asynchronous workflows with error handling</li>
+                            <li>Operations that benefit from true multithreading</li>
+                            <li>Integration with existing async .NET libraries</li>
+                            <li>Background processing that doesn't need Unity's main thread</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Async/Await in Unity - proper usage patterns
+using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.Networking;
+
+public class AsyncAwaitExamples : MonoBehaviour
+{
+    [Header("Network Configuration")]
+    [SerializeField] private string apiUrl = "https://api.example.com/data";
+    
+    async void Start()
+    {
+        // Example: Network request using async/await
+        try
+        {
+            string data = await FetchDataFromAPI(apiUrl);
+            Debug.Log($"Received data: {data}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Failed to fetch data: {ex.Message}");
+        }
+    }
+    
+    // Async network operation
+    private async Task&lt;string&gt; FetchDataFromAPI(string url)
+    {
+        using (UnityWebRequest request = UnityWebRequest.Get(url))
+        {
+            // Send request asynchronously
+            await request.SendWebRequest();
+            
+            // Check for errors
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                throw new System.Exception($"Network error: {request.error}");
+            }
+            
+            return request.downloadHandler.text;
+        }
+    }
+    
+    // Combining async/await with Unity main thread operations
+    private async Task ProcessDataAsync(string rawData)
+    {
+        // This runs on a background thread
+        await Task.Run(() =&gt;
+        {
+            // CPU-intensive processing
+            System.Threading.Thread.Sleep(1000); // Simulate processing
+        });
+        
+        // Back on main thread for Unity operations
+        await Task.Yield();
+        
+        // Now we can safely call Unity APIs
+        Debug.Log($"Processed data: {rawData}");
+    }
+    
+    // Async operation with cancellation
+    private async Task LongRunningOperationAsync(System.Threading.CancellationToken cancellationToken)
+    {
+        for (int i = 0; i &lt; 100; i++)
+        {
+            // Check for cancellation
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            // Simulate work
+            await Task.Delay(100, cancellationToken);
+            
+            // Update progress (must be on main thread)
+            Debug.Log($"Progress: {i}/100");
+        }
+    }
+    
+    // Mixed approach - async for I/O, coroutines for game logic
+    public async void LoadAndDisplayData()
+    {
+        try
+        {
+            // Use async for network I/O
+            string data = await FetchDataFromAPI(apiUrl);
+            
+            // Use coroutine for UI animation
+            StartCoroutine(AnimateDataDisplay(data));
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Load failed: {ex.Message}");
+        }
+    }
+    
+    private System.Collections.IEnumerator AnimateDataDisplay(string data)
+    {
+        // Animate UI elements to show data
+        float animationTime = 0f;
+        while (animationTime &lt; 1f)
+        {
+            animationTime += Time.deltaTime;
+            // Update UI animation
+            yield return null;
+        }
+        
+        Debug.Log($"Data displayed: {data}");
+    }
+}</code></pre>
+            </div>
+
+            <h2>4.4 Unity's Serialization System</h2>
+
+            <p>Unity's serialization system is one of its most powerful features, but it works quite differently from .NET's standard serialization mechanisms. Understanding how Unity serialization works is crucial for creating Inspector-friendly components and managing data persistence in your games.</p>
+
+            <p>Unity's serializer is designed specifically for game development scenarios—it handles complex object graphs, maintains references between assets and scene objects, and provides the seamless Inspector integration that makes Unity's visual editing so powerful. However, it has specific rules and limitations that you need to understand to use it effectively.</p>
+
+            <p>The serialization system is also responsible for the "hot reload" functionality that allows you to modify code while the game is running and see changes immediately. When you recompile scripts, Unity uses serialization to preserve the state of your game objects across the compilation.</p>
+
+            <h3>Serialization Rules and Best Practices</h3>
+
+            <p>Unity can serialize fields that meet specific criteria, and understanding these rules will help you design components that work smoothly with the Inspector and maintain their state correctly. The rules are more restrictive than standard .NET serialization but are designed to ensure reliable, cross-platform compatibility.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Unity serialization examples and best practices
+using System.Collections.Generic;
+using UnityEngine;
+
+[System.Serializable]
+public class PlayerData
+{
+    // Unity can serialize these types
+    public string playerName;
+    public int level;
+    public float experience;
+    public bool isAlive;
+    public Vector3 position;
+    public Color playerColor;
+    public GameObject playerPrefab;
+    public AudioClip[] soundEffects;
+    
+    // Nested serializable classes work too
+    public InventoryData inventory;
+}
+
+[System.Serializable]
+public class InventoryData
+{
+    public List&lt;string&gt; itemNames;
+    public int[] itemCounts;
+    public Dictionary&lt;string, int&gt; itemDatabase; // This WON'T serialize!
+}
+
+public class SerializationExamples : MonoBehaviour
+{
+    [Header("Basic Serializable Fields")]
+    // These will appear in the Inspector
+    [SerializeField] private int health = 100;
+    [SerializeField] private string playerName = "Player";
+    [SerializeField] private bool isInvincible = false;
+    
+    [Header("Unity Types")]
+    [SerializeField] private GameObject targetObject;
+    [SerializeField] private Transform followTarget;
+    [SerializeField] private Material[] materials;
+    
+    [Header("Collections")]
+    [SerializeField] private List&lt;string&gt; tags = new List&lt;string&gt;();
+    [SerializeField] private int[] scores = new int[10];
+    
+    [Header("Custom Classes")]
+    [SerializeField] private PlayerData playerData = new PlayerData();
+    
+    [Header("Inspector Customization")]
+    [Range(0, 100)]
+    [SerializeField] private float volume = 50f;
+    
+    [Multiline(3)]
+    [SerializeField] private string description = "Enter description here...";
+    
+    [TextArea(3, 5)]
+    [SerializeField] private string longText = "Longer text with scrolling...";
+    
+    [Space(20)]
+    [SerializeField] private bool separatedField = true;
+    
+    [Tooltip("This field controls the player's movement speed")]
+    [SerializeField] private float movementSpeed = 5f;
+    
+    // Private fields that DON'T serialize (not visible in Inspector)
+    private float runtimeValue;
+    private Dictionary&lt;string, int&gt; runtimeDictionary;
+    
+    // Properties don't serialize
+    public int Health =&gt; health;
+    public string PlayerName { get; set; }
+    
+    // Static fields don't serialize
+    private static int instanceCount = 0;
+    
+    // Const fields don't need serialization
+    private const float GRAVITY = -9.81f;
+    
+    void Start()
+    {
+        // Initialize non-serializable fields
+        runtimeDictionary = new Dictionary&lt;string, int&gt;
+        {
+            { "coins", 0 },
+            { "gems", 0 }
+        };
+        
+        instanceCount++;
+    }
+    
+    // Custom serialization for complex types
+    [System.Serializable]
+    public class SerializableDictionary&lt;TKey, TValue&gt;
+    {
+        [SerializeField] private List&lt;TKey&gt; keys = new List&lt;TKey&gt;();
+        [SerializeField] private List&lt;TValue&gt; values = new List&lt;TValue&gt;();
+        
+        public Dictionary&lt;TKey, TValue&gt; ToDictionary()
+        {
+            var dict = new Dictionary&lt;TKey, TValue&gt;();
+            for (int i = 0; i &lt; keys.Count && i &lt; values.Count; i++)
+            {
+                dict[keys[i]] = values[i];
+            }
+            return dict;
+        }
+        
+        public void FromDictionary(Dictionary&lt;TKey, TValue&gt; dictionary)
+        {
+            keys.Clear();
+            values.Clear();
+            
+            foreach (var kvp in dictionary)
+            {
+                keys.Add(kvp.Key);
+                values.Add(kvp.Value);
+            }
+        }
+    }
+    
+    [Header("Custom Dictionary")]
+    [SerializeField] private SerializableDictionary&lt;string, int&gt; serializableStats = 
+        new SerializableDictionary&lt;string, int&gt;();
+    
+    // Validation in serialization
+    void OnValidate()
+    {
+        // Called when values change in the Inspector
+        // Use for validation and cleanup
+        health = Mathf.Max(0, health);
+        movementSpeed = Mathf.Max(0.1f, movementSpeed);
+        
+        if (string.IsNullOrEmpty(playerName))
+        {
+            playerName = "Unnamed Player";
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h2>4.5 Debugging and Testing in Unity</h2>
+
+            <p>Effective debugging in Unity requires a different approach than traditional application debugging. While you can use breakpoints and step-through debugging like in other .NET applications, Unity also provides game-specific debugging tools that are essential for troubleshooting issues related to physics, rendering, performance, and game logic.</p>
+
+            <p>Unity's debugging tools are designed to handle the unique challenges of real-time applications where traditional debugging approaches can disrupt the continuous execution flow. The combination of logging, visual debugging, profiling tools, and runtime inspection makes it possible to debug complex game systems without breaking the game's flow.</p>
+
+            <h3>Unity Debug Class and Logging</h3>
+
+            <p>Unity's Debug class provides much more than simple console logging—it includes conditional compilation, visual debugging tools, and integration with Unity's Console window that makes it easy to filter and navigate through debug information during development.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Comprehensive debugging examples
+using UnityEngine;
+
+public class DebuggingExamples : MonoBehaviour
+{
+    [Header("Debug Configuration")]
+    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool showDebugVisuals = true;
+    [SerializeField] private float debugVisualizationTime = 2f;
+    
+    void Start()
+    {
+        // Basic logging with different levels
+        Debug.Log("This is an info message");
+        Debug.LogWarning("This is a warning message");
+        Debug.LogError("This is an error message");
+        
+        // Formatted logging
+        int playerLevel = 5;
+        float playerHealth = 75.5f;
+        Debug.LogFormat("Player Status - Level: {0}, Health: {1:F1}", playerLevel, playerHealth);
+        
+        // Conditional logging
+        if (enableDebugLogs)
+        {
+            Debug.Log("Debug logs are enabled");
+        }
+        
+        // Object context for logs (click to highlight in hierarchy)
+        Debug.Log("This message is associated with this GameObject", this);
+    }
+    
+    void Update()
+    {
+        // Conditional compilation for debug code
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            DebugPlayerState();
+        }
+        #endif
+        
+        // Visual debugging
+        if (showDebugVisuals)
+        {
+            DrawDebugLines();
+        }
+    }
+    
+    private void DebugPlayerState()
+    {
+        Debug.Log("=== PLAYER DEBUG INFO ===");
+        Debug.Log($"Position: {transform.position}");
+        Debug.Log($"Rotation: {transform.rotation.eulerAngles}");
+        Debug.Log($"Scale: {transform.localScale}");
+        
+        // Component information
+        var components = GetComponents&lt;Component&gt;();
+        Debug.Log($"Components ({components.Length}):");
+        foreach (var component in components)
+        {
+            Debug.Log($"  - {component.GetType().Name}");
+        }
+    }
+    
+    private void DrawDebugLines()
+    {
+        // Draw debug lines in Scene view
+        Vector3 forward = transform.position + transform.forward * 2f;
+        Vector3 right = transform.position + transform.right * 2f;
+        Vector3 up = transform.position + transform.up * 2f;
+        
+        Debug.DrawLine(transform.position, forward, Color.blue, debugVisualizationTime);
+        Debug.DrawLine(transform.position, right, Color.red, debugVisualizationTime);
+        Debug.DrawLine(transform.position, up, Color.green, debugVisualizationTime);
+        
+        // Draw debug rays
+        Debug.DrawRay(transform.position, Vector3.down, Color.yellow, debugVisualizationTime);
+    }
+    
+    void OnDrawGizmos()
+    {
+        // Gizmos are always visible in Scene view
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, 1f);
+        
+        // Draw direction indicators
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(transform.position, transform.forward);
+    }
+    
+    void OnDrawGizmosSelected()
+    {
+        // Only visible when this GameObject is selected
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireCube(transform.position, Vector3.one * 2f);
+    }
+    
+    // Performance debugging
+    void OnGUI()
+    {
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (enableDebugLogs)
+        {
+            GUILayout.BeginArea(new Rect(10, 10, 200, 100));
+            GUILayout.Label($"FPS: {1f / Time.deltaTime:F1}");
+            GUILayout.Label($"Frame: {Time.frameCount}");
+            GUILayout.Label($"Time: {Time.time:F2}s");
+            GUILayout.EndArea();
+        }
+        #endif
+    }
+}
+
+// Custom debug utility class
+public static class DebugUtils
+{
+    public static void LogWithTimestamp(string message, Object context = null)
+    {
+        string timestamp = System.DateTime.Now.ToString("HH:mm:ss.fff");
+        Debug.Log($"[{timestamp}] {message}", context);
+    }
+    
+    public static void LogError(string message, System.Exception exception = null, Object context = null)
+    {
+        string errorMessage = exception != null 
+            ? $"{message}\nException: {exception.Message}\nStack Trace: {exception.StackTrace}"
+            : message;
+        Debug.LogError(errorMessage, context);
+    }
+    
+    public static void DrawArrow(Vector3 start, Vector3 direction, Color color, float duration = 0f)
+    {
+        Vector3 end = start + direction;
+        Debug.DrawLine(start, end, color, duration);
+        
+        // Draw arrowhead
+        Vector3 arrowHead1 = end - direction.normalized * 0.3f + Vector3.Cross(direction, Vector3.up).normalized * 0.1f;
+        Vector3 arrowHead2 = end - direction.normalized * 0.3f - Vector3.Cross(direction, Vector3.up).normalized * 0.1f;
+        
+        Debug.DrawLine(end, arrowHead1, color, duration);
+        Debug.DrawLine(end, arrowHead2, color, duration);
+    }
+}</code></pre>
+            </div>
+
+            <h3>Unity Testing Framework</h3>
+
+            <p>Unity provides a comprehensive testing framework that supports both edit-mode tests (similar to unit tests) and play-mode tests that can test your game while it's running. This framework integrates with Unity's Test Runner window and supports NUnit assertions, making it familiar if you've used .NET testing frameworks.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// Unity testing examples
+using NUnit.Framework;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+// Edit Mode Tests - run in the Unity Editor without entering Play mode
+public class EditModeTests
+{
+    [Test]
+    public void HealthComponent_InitializesWithCorrectValues()
+    {
+        // Arrange
+        var gameObject = new GameObject();
+        var healthComponent = gameObject.AddComponent&lt;Health&gt;();
+        
+        // Act
+        // Component initializes automatically
+        
+        // Assert
+        Assert.AreEqual(100, healthComponent.MaxHealth);
+        Assert.AreEqual(100, healthComponent.CurrentHealth);
+        Assert.IsTrue(healthComponent.IsAlive);
+        
+        // Cleanup
+        Object.DestroyImmediate(gameObject);
+    }
+    
+    [Test]
+    public void HealthComponent_TakeDamage_ReducesHealth()
+    {
+        // Arrange
+        var gameObject = new GameObject();
+        var healthComponent = gameObject.AddComponent&lt;Health&gt;();
+        
+        // Act
+        healthComponent.TakeDamage(25);
+        
+        // Assert
+        Assert.AreEqual(75, healthComponent.CurrentHealth);
+        Assert.IsTrue(healthComponent.IsAlive);
+        
+        // Cleanup
+        Object.DestroyImmediate(gameObject);
+    }
+}
+
+// Play Mode Tests - run during Play mode and can test frame-by-frame behavior
+public class PlayModeTests
+{
+    [UnityTest]
+    public IEnumerator Player_MovesCorrectly_WhenInputApplied()
+    {
+        // Arrange
+        var player = new GameObject("TestPlayer");
+        var playerController = player.AddComponent&lt;PlayerMovement&gt;();
+        
+        Vector3 initialPosition = player.transform.position;
+        
+        // Act
+        // Simulate input for one frame
+        playerController.SimulateInput(Vector2.right);
+        
+        // Wait for physics update
+        yield return new WaitForFixedUpdate();
+        
+        // Assert
+        Assert.Greater(player.transform.position.x, initialPosition.x);
+        
+        // Cleanup
+        Object.Destroy(player);
+    }
+    
+    [UnityTest]
+    public IEnumerator Animation_CompletesInExpectedTime()
+    {
+        // Arrange
+        var animator = new GameObject("TestAnimator");
+        var animationComponent = animator.AddComponent&lt;TestAnimation&gt;();
+        
+        // Act
+        animationComponent.StartAnimation();
+        float startTime = Time.time;
+        
+        // Wait for animation to complete
+        yield return new WaitUntil(() =&gt; !animationComponent.IsAnimating);
+        
+        float elapsedTime = Time.time - startTime;
+        
+        // Assert
+        Assert.AreEqual(2f, elapsedTime, 0.1f); // Animation should take ~2 seconds
+        
+        // Cleanup
+        Object.Destroy(animator);
+    }
+}
+
+// Performance Tests
+public class PerformanceTests
+{
+    [Test, Performance]
+    public void ObjectPooling_PerformsWell_WithManyObjects()
+    {
+        // Arrange
+        var pool = new ObjectPool();
+        
+        // Act & Assert
+        Measure.Method(() =&gt;
+        {
+            // Test spawning and returning 1000 objects
+            for (int i = 0; i &lt; 1000; i++)
+            {
+                var obj = pool.GetObject();
+                pool.ReturnObject(obj);
+            }
+        })
+        .WarmupCount(10)
+        .MeasurementCount(100)
+        .Run();
+    }
+}</code></pre>
+            </div>
+
+            <h2>4.6 SOLID Principles in Unity Development</h2>
+
+            <p>The SOLID principles of software design apply just as well to Unity development as they do to traditional software engineering. However, Unity's component-based architecture and frame-based execution model require some adaptation of how you apply these principles in practice.</p>
+
+            <p>Understanding how to apply SOLID principles in Unity will help you create more maintainable, testable, and flexible game systems. The component-based architecture actually makes it easier to follow some of these principles, particularly the Single Responsibility Principle and Dependency Inversion Principle.</p>
+
+            <div class="code-container">
+                <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                <pre><code class="language-csharp">// SOLID Principles applied to Unity development
+
+// Single Responsibility Principle - Each component has one job
+public class MovementController : MonoBehaviour
+{
+    // Only handles movement logic
+    [SerializeField] private float speed = 5f;
+    private Rigidbody2D rb;
+    
+    void Awake()
+    {
+        rb = GetComponent&lt;Rigidbody2D&gt;();
+    }
+    
+    public void Move(Vector2 direction)
+    {
+        rb.velocity = direction * speed;
+    }
+}
+
+public class InputHandler : MonoBehaviour
+{
+    // Only handles input detection
+    private MovementController movementController;
+    
+    void Awake()
+    {
+        movementController = GetComponent&lt;MovementController&gt;();
+    }
+    
+    void Update()
+    {
+        Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+        movementController.Move(input);
+    }
+}
+
+// Open/Closed Principle - Open for extension, closed for modification
+public abstract class Weapon : MonoBehaviour
+{
+    [SerializeField] protected int damage;
+    [SerializeField] protected float fireRate;
+    
+    public abstract void Fire();
+    public abstract void Reload();
+}
+
+public class Pistol : Weapon
+{
+    [SerializeField] private int magazineSize = 12;
+    private int currentAmmo;
+    
+    public override void Fire()
+    {
+        if (currentAmmo &gt; 0)
+        {
+            // Pistol-specific firing logic
+            currentAmmo--;
+            Debug.Log("Pistol fired");
+        }
+    }
+    
+    public override void Reload()
+    {
+        currentAmmo = magazineSize;
+        Debug.Log("Pistol reloaded");
+    }
+}
+
+// Liskov Substitution Principle - Derived classes should be substitutable
+public class WeaponSystem : MonoBehaviour
+{
+    private Weapon currentWeapon;
+    
+    public void EquipWeapon(Weapon weapon)
+    {
+        currentWeapon = weapon; // Any Weapon subclass works here
+    }
+    
+    void Update()
+    {
+        if (Input.GetButtonDown("Fire1") && currentWeapon != null)
+        {
+            currentWeapon.Fire(); // Works with any weapon type
+        }
+    }
+}
+
+// Interface Segregation Principle - Small, focused interfaces
+public interface IDamageable
+{
+    void TakeDamage(int damage);
+    bool IsAlive { get; }
+}
+
+public interface IHealable
+{
+    void Heal(int amount);
+    int MaxHealth { get; }
+}
+
+public interface IMoveable
+{
+    void Move(Vector3 direction);
+    float Speed { get; }
+}
+
+// Dependency Inversion Principle - Depend on abstractions
+public class HealthSystem : MonoBehaviour, IDamageable, IHealable
+{
+    [SerializeField] private int maxHealth = 100;
+    private int currentHealth;
+    
+    public bool IsAlive =&gt; currentHealth &gt; 0;
+    public int MaxHealth =&gt; maxHealth;
+    
+    void Start()
+    {
+        currentHealth = maxHealth;
+    }
+    
+    public void TakeDamage(int damage)
+    {
+        currentHealth = Mathf.Max(0, currentHealth - damage);
+        if (!IsAlive) Die();
+    }
+    
+    public void Heal(int amount)
+    {
+        currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+    }
+    
+    private void Die()
+    {
+        // Handle death
+    }
+}
+
+// Combat system depends on interfaces, not concrete implementations
+public class CombatSystem : MonoBehaviour
+{
+    public void AttackTarget(IDamageable target, int damage)
+    {
+        if (target != null && target.IsAlive)
+        {
+            target.TakeDamage(damage);
+        }
+    }
+    
+    public void HealTarget(IHealable target, int healAmount)
+    {
+        if (target != null)
+        {
+            target.Heal(healAmount);
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h2>4.7 Exercises</h2>
+
+            <div class="exercise">
+                <h3>MonoBehaviour Lifecycle Mastery</h3>
+                <p>Create a comprehensive lifecycle demonstration system:</p>
+                <ol>
+                    <li><strong>Create a LifecycleLogger component</strong> that logs every lifecycle method with timestamps</li>
+                    <li><strong>Add execution order testing</strong> by creating multiple components that depend on each other</li>
+                    <li><strong>Implement proper cleanup</strong> with event subscription/unsubscription patterns</li>
+                    <li><strong>Test the system</strong> by creating, activating, deactivating, and destroying GameObjects</li>
+                </ol>
+            </div>
+
+            <div class="challenge">
+                <h3>Advanced Coroutine System</h3>
+                <p>Build a sophisticated coroutine management system:</p>
+                <ol>
+                    <li><strong>Create a CoroutineManager</strong> that can pause, resume, and cancel coroutines by name or tag</li>
+                    <li><strong>Implement coroutine chaining</strong> with success/failure callbacks</li>
+                    <li><strong>Add progress tracking</strong> for long-running operations</li>
+                    <li><strong>Create a visual debugger</strong> that shows active coroutines in the Inspector</li>
+                    <li><strong>Performance test</strong> your system with 100+ concurrent coroutines</li>
+                </ol>
+            </div>
+
+            <h2>Summary</h2>
+
+            <p>In this chapter, you've mastered the fundamentals of C# scripting in Unity:</p>
+            <ul>
+                <li>✅ Unity's C# environment and its differences from standard .NET development</li>
+                <li>✅ MonoBehaviour lifecycle and execution order management</li>
+                <li>✅ Coroutines as Unity's primary asynchronous programming model</li>
+                <li>✅ Unity's serialization system and Inspector integration</li>
+                <li>✅ Debugging techniques and testing strategies specific to Unity</li>
+                <li>✅ Application of SOLID principles to component-based game development</li>
+            </ul>
+
+            <p>Understanding these scripting fundamentals is essential because they form the foundation of all game logic in Unity. Every interaction, animation, game mechanic, and system you build will rely on these concepts. The combination of MonoBehaviour lifecycle management, coroutines for time-based operations, and Unity's serialization system provides a powerful toolkit for creating complex, maintainable games.</p>
+
+            <div class="alert alert-success" style="margin-top: 2rem;">
+                <h3>Next Steps</h3>
+                <p>Before moving to Chapter 5:</p>
+                <ol>
+                    <li>Practice implementing the MonoBehaviour lifecycle in different scenarios</li>
+                    <li>Create coroutines for animations and timed sequences</li>
+                    <li>Experiment with Unity's serialization and Inspector customization</li>
+                    <li>Set up unit tests for your Unity components</li>
+                    <li>Apply SOLID principles to a component design challenge</li>
+                </ol>
+                <p style="margin-top: 1rem;"><strong>Remember:</strong> Good scripting practices lead to maintainable and scalable games!</p>
+                
+                <div class="demo-controls" style="margin-top: 1rem;">
+                    <button class="demo-button" onclick="window.location.href='chapter03.html'">
+                        ← Previous Chapter
+                    </button>
+                    <button class="demo-button" onclick="window.location.href='chapter05.html'">
+                        Continue to Chapter 5 →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // MonoBehaviour lifecycle demonstration
+        function showLifecyclePhase(phase) {
+            const output = document.getElementById('lifecycleOutput');
+            let content = '';
+            
+            switch(phase) {
+                case 'initialization':
+                    content = `
+<strong>🚀 Initialization Phase</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<span style="color: var(--accent-color);">Awake()</span> - Called first, even for inactive GameObjects
+├── Perfect for: Internal setup, getting component references
+├── Timing: Before any Start() calls
+└── Example: Initialize variables, set up singletons
+
+<span style="color: var(--accent-color);">OnEnable()</span> - Called when GameObject becomes active
+├── Perfect for: Event subscriptions, starting coroutines
+├── Timing: After Awake(), whenever object is enabled
+└── Example: Subscribe to input events
+
+<span style="color: var(--accent-color);">Start()</span> - Called before first Update()
+├── Perfect for: Setup that depends on other objects
+├── Timing: After all Awake() calls complete
+└── Example: Find other GameObjects, establish connections
+
+<strong>🔄 Execution Order:</strong> All Awake() → All OnEnable() → All Start()
+                    `;
+                    break;
+                    
+                case 'frame-loop':
+                    content = `
+<strong>🔄 Frame Loop Phase (60+ times per second)</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<span style="color: var(--primary-color);">Update()</span> - Called once per frame
+├── Perfect for: Game logic, input handling, animations
+├── Timing: Frame-rate dependent (60 FPS = 60 calls/second)
+├── Delta Time: Use Time.deltaTime for frame-rate independent movement
+└── Example: Player movement, UI updates
+
+<span style="color: var(--primary-color);">LateUpdate()</span> - Called after all Update() methods
+├── Perfect for: Camera following, final position adjustments
+├── Timing: After all objects have updated their positions
+└── Example: Camera follows player, UI follows world objects
+
+<strong>⚡ Performance Tips:</strong>
+• Avoid expensive operations in Update()
+• Cache component references in Start()
+• Use coroutines for operations that don't need every-frame execution
+                    `;
+                    break;
+                    
+                case 'physics':
+                    content = `
+<strong>⚛️ Physics Phase (Usually 50 times per second)</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<span style="color: var(--secondary-color);">FixedUpdate()</span> - Called at fixed intervals
+├── Perfect for: Physics calculations, consistent timing needed
+├── Timing: Independent of framerate (default: 50Hz = 0.02s intervals)
+├── Delta Time: Use Time.fixedDeltaTime
+└── Example: Apply forces to Rigidbodies, physics-based movement
+
+<span style="color: var(--secondary-color);">OnTriggerEnter/Stay/Exit()</span> - Collision detection
+├── Perfect for: Detecting overlaps without physical collision
+├── Timing: During physics simulation
+└── Example: Pickup collection, area triggers
+
+<span style="color: var(--secondary-color);">OnCollisionEnter/Stay/Exit()</span> - Physical collisions
+├── Perfect for: Handling physical impacts
+├── Timing: During physics simulation
+└── Example: Damage on impact, bounce effects
+
+<strong>🎯 Key Point:</strong> FixedUpdate runs independently of framerate for consistent physics
+                    `;
+                    break;
+                    
+                case 'rendering':
+                    content = `
+<strong>🎨 Rendering Phase</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<span style="color: var(--warning-color);">OnWillRenderObject()</span> - Before rendering each camera
+├── Perfect for: Per-camera setup, culling calculations
+├── Timing: For each camera that can see this object
+└── Example: Update shader properties, LOD selection
+
+<span style="color: var(--warning-color);">OnPreRender()</span> - Before camera renders (Camera scripts only)
+├── Perfect for: Camera-specific setup
+├── Timing: Once per camera before rendering
+└── Example: Set render targets, clear flags
+
+<span style="color: var(--warning-color);">OnRenderObject()</span> - Custom rendering
+├── Perfect for: Custom Graphics.Draw calls
+├── Timing: During rendering phase
+└── Example: Debug lines, custom meshes
+
+<span style="color: var(--warning-color);">OnPostRender()</span> - After camera renders
+├── Perfect for: Post-processing, overlays
+├── Timing: After camera finishes rendering
+└── Example: Screen effects, final compositing
+                    `;
+                    break;
+                    
+                case 'cleanup':
+                    content = `
+<strong>🧹 Cleanup Phase</strong>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<span style="color: var(--danger-color);">OnDisable()</span> - Called when GameObject becomes inactive
+├── Perfect for: Event unsubscription, stopping coroutines
+├── Timing: When SetActive(false) called or object destroyed
+├── Important: Can be called multiple times if object reactivated
+└── Example: Unsubscribe from events, pause systems
+
+<span style="color: var(--danger-color);">OnDestroy()</span> - Called when GameObject is destroyed
+├── Perfect for: Final cleanup, resource disposal
+├── Timing: When Destroy() called or scene changes
+├── Important: Called only once before garbage collection
+└── Example: Release file handles, dispose unmanaged resources
+
+<span style="color: var(--danger-color);">OnApplicationPause/Focus/Quit()</span> - Application events
+├── Perfect for: Save game state, pause/resume logic
+├── Timing: When app loses focus or is closed
+└── Example: Auto-save, pause game, cleanup on quit
+
+<strong>⚠️ Memory Leak Prevention:</strong>
+Always unsubscribe from events in OnDisable() to prevent memory leaks!
+                    `;
+                    break;
+            }
+            
+            output.innerHTML = content;
+        }
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Game Development Guide for DevOps Engineers</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <h1>
+                <div class="unity-logo">U</div>
+                Unity Development Guide
+            </h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="color: var(--text-muted);">For DevOps Engineers</span>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <h2>Getting Started</h2>
+        <ul>
+            <li><a href="index.html" class="active">📚 Introduction</a></li>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#how-to-use">How to Use This Guide</a></li>
+        </ul>
+
+        <h2>Part I: Foundations</h2>
+        <ul>
+            <li><a href="chapter01.html">Ch 1: Unity Fundamentals</a></li>
+            <li><a href="chapter02.html">Ch 2: Unity Editor & Setup</a></li>
+            <li><a href="chapter03.html">Ch 3: GameObjects & Components</a></li>
+            <li><a href="chapter04.html">Ch 4: C# Scripting in Unity</a></li>
+        </ul>
+
+        <h2>Part II: Core Systems</h2>
+        <ul>
+            <li><a href="chapter05.html">Ch 5: Input & Player Control</a></li>
+            <li><a href="chapter06.html">Ch 6: Physics & Collisions</a></li>
+            <li><a href="chapter07.html">Ch 7: UI & Canvas System</a></li>
+            <li><a href="chapter08.html">Ch 8: Audio & Visual Effects</a></li>
+            <li><a href="chapter09.html">Ch 9: Scene Management</a></li>
+        </ul>
+
+        <h2>Part III: Complete Project</h2>
+        <ul>
+            <li><a href="chapter10.html">Ch 10: Your First Game</a></li>
+            <li><a href="chapter11.html">Ch 11: Performance</a></li>
+            <li><a href="chapter12.html">Ch 12: Deployment</a></li>
+        </ul>
+
+        <h2>Resources</h2>
+        <ul>
+            <li><a href="#glossary">📖 Glossary</a></li>
+            <li><a href="#resources">🔗 Links & Resources</a></li>
+            <li><a href="#exercises">💪 All Exercises</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="fade-in">
+            <h1>Welcome to Unity Game Development</h1>
+            <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 2rem;">
+                A comprehensive guide for DevOps engineers transitioning to game development
+            </p>
+
+            <div class="alert alert-info">
+                <strong>🎯 Goal:</strong> By the end of this guide, you'll be able to create your own indie game using Unity, 
+                leveraging your existing C# and .NET Core knowledge.
+            </div>
+
+            <h2 id="about">About This Guide</h2>
+            <p>
+                This guide is specifically designed for DevOps engineers with C#/.NET Core experience who want to learn game 
+                development with Unity. We'll draw parallels to familiar concepts from server and web development, making 
+                your transition to game development smooth and intuitive.
+            </p>
+
+            <div class="learning-objectives">
+                <h3>What You'll Learn</h3>
+                <ul>
+                    <li>Unity's component-based architecture and how it relates to modern web frameworks</li>
+                    <li>Game development patterns and how they differ from server development</li>
+                    <li>C# scripting in Unity with MonoBehaviour lifecycle</li>
+                    <li>Building interactive games with physics, UI, and audio</li>
+                    <li>Performance optimization and deployment strategies</li>
+                    <li>Creating a complete indie game from scratch</li>
+                </ul>
+            </div>
+
+            <h2 id="prerequisites">Prerequisites</h2>
+            <p>This guide assumes you have:</p>
+            <ul>
+                <li>✅ Experience with C# and .NET Core</li>
+                <li>✅ Understanding of object-oriented programming</li>
+                <li>✅ Familiarity with Git version control</li>
+                <li>✅ Basic knowledge of web development concepts</li>
+                <li>✅ A computer capable of running Unity (8GB+ RAM recommended)</li>
+            </ul>
+
+            <h2 id="how-to-use">How to Use This Guide</h2>
+            
+            <div class="interactive-demo">
+                <h3>Interactive Learning Path</h3>
+                <p>Each chapter includes:</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px;">
+                        <h4 style="color: var(--primary-color);">📚 Theory</h4>
+                        <p>Core concepts explained with familiar analogies</p>
+                    </div>
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px;">
+                        <h4 style="color: var(--accent-color);">💻 Code Examples</h4>
+                        <p>Practical, runnable code with explanations</p>
+                    </div>
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px;">
+                        <h4 style="color: var(--secondary-color);">🎮 Exercises</h4>
+                        <p>Hands-on projects to reinforce learning</p>
+                    </div>
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px;">
+                        <h4 style="color: var(--warning-color);">🔗 Resources</h4>
+                        <p>Links to documentation and tutorials</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Learning Path</h2>
+            
+            <h3>Part I: Foundations (Weeks 1-2)</h3>
+            <p>Start here to understand Unity's core concepts and how they relate to your existing knowledge.</p>
+            <ul>
+                <li><strong>Chapter 1:</strong> Paradigm shift from server to game development</li>
+                <li><strong>Chapter 2:</strong> Navigating the Unity Editor like a pro</li>
+                <li><strong>Chapter 3:</strong> Component architecture (think React components)</li>
+                <li><strong>Chapter 4:</strong> C# scripting with Unity's APIs</li>
+            </ul>
+
+            <h3>Part II: Core Systems (Weeks 3-4)</h3>
+            <p>Learn the essential systems that power every Unity game.</p>
+            <ul>
+                <li><strong>Chapter 5:</strong> Input handling and player controls</li>
+                <li><strong>Chapter 6:</strong> Physics engine and collision detection</li>
+                <li><strong>Chapter 7:</strong> Building user interfaces</li>
+                <li><strong>Chapter 8:</strong> Adding audio and visual polish</li>
+                <li><strong>Chapter 9:</strong> Managing game flow and scenes</li>
+            </ul>
+
+            <h3>Part III: Complete Project (Weeks 5-6)</h3>
+            <p>Put it all together to create your first complete game.</p>
+            <ul>
+                <li><strong>Chapter 10:</strong> Building a complete 2D game</li>
+                <li><strong>Chapter 11:</strong> Optimization and profiling</li>
+                <li><strong>Chapter 12:</strong> Building and deployment (CI/CD for games!)</li>
+            </ul>
+
+            <h2>Quick Start</h2>
+            
+            <div class="exercise">
+                <h3>Your First Unity Project in 5 Minutes</h3>
+                <ol>
+                    <li>
+                        <strong>Install Unity Hub</strong>
+                        <p>Download from <a href="https://unity.com/download" target="_blank">unity.com/download</a></p>
+                    </li>
+                    <li>
+                        <strong>Install Unity Editor</strong>
+                        <p>Via Unity Hub, install Unity 2022.3 LTS</p>
+                    </li>
+                    <li>
+                        <strong>Create New Project</strong>
+                        <p>Select "2D Core" template, name it "MyFirstGame"</p>
+                    </li>
+                    <li>
+                        <strong>Run Hello World</strong>
+                        <div class="code-container">
+                            <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-csharp">using UnityEngine;
+
+public class HelloWorld : MonoBehaviour
+{
+    void Start()
+    {
+        Debug.Log("Hello, Unity!");
+    }
+}</code></pre>
+                        </div>
+                    </li>
+                    <li>
+                        <strong>Press Play</strong>
+                        <p>See your message in the Console window!</p>
+                    </li>
+                </ol>
+            </div>
+
+            <h2>DevOps Integration</h2>
+            <p>
+                As a DevOps engineer, you'll appreciate Unity's support for:
+            </p>
+            <ul>
+                <li>🔧 <strong>Version Control:</strong> Git integration with proper .gitignore</li>
+                <li>🚀 <strong>CI/CD:</strong> Unity Cloud Build, Jenkins, GitHub Actions</li>
+                <li>📊 <strong>Analytics:</strong> Performance monitoring and crash reporting</li>
+                <li>🐳 <strong>Containerization:</strong> Unity in Docker for build automation</li>
+                <li>📦 <strong>Package Management:</strong> Unity Package Manager (like npm)</li>
+            </ul>
+
+            <h2 id="glossary">Key Terms Quick Reference</h2>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Unity Term</th>
+                        <th>Familiar Equivalent</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>GameObject</td>
+                        <td>DOM Element / React Component Instance</td>
+                        <td>Basic entity in a Unity scene</td>
+                    </tr>
+                    <tr>
+                        <td>Component</td>
+                        <td>Class / Service</td>
+                        <td>Reusable behavior attached to GameObjects</td>
+                    </tr>
+                    <tr>
+                        <td>Prefab</td>
+                        <td>Component Template / Docker Image</td>
+                        <td>Reusable GameObject template</td>
+                    </tr>
+                    <tr>
+                        <td>Scene</td>
+                        <td>Application State / Route</td>
+                        <td>Container for game content</td>
+                    </tr>
+                    <tr>
+                        <td>Inspector</td>
+                        <td>Properties Panel / Config File</td>
+                        <td>Visual property editor</td>
+                    </tr>
+                    <tr>
+                        <td>Coroutine</td>
+                        <td>Async Function / Generator</td>
+                        <td>Time-based execution flow</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2 id="resources">Additional Resources</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 2rem 0;">
+                <div class="alert alert-info">
+                    <h4>📚 Documentation</h4>
+                    <ul>
+                        <li><a href="https://docs.unity3d.com" target="_blank">Unity Manual</a></li>
+                        <li><a href="https://docs.unity3d.com/ScriptReference/" target="_blank">Scripting API</a></li>
+                        <li><a href="https://learn.unity.com" target="_blank">Unity Learn</a></li>
+                    </ul>
+                </div>
+                <div class="alert alert-success">
+                    <h4>🎥 Video Tutorials</h4>
+                    <ul>
+                        <li><a href="https://www.youtube.com/c/Brackeys" target="_blank">Brackeys</a></li>
+                        <li><a href="https://www.youtube.com/c/CodeMonkeyUnity" target="_blank">Code Monkey</a></li>
+                        <li><a href="https://www.youtube.com/c/unity" target="_blank">Unity Official</a></li>
+                    </ul>
+                </div>
+                <div class="alert alert-warning">
+                    <h4>🛠️ Tools</h4>
+                    <ul>
+                        <li><a href="https://visualstudio.microsoft.com/" target="_blank">Visual Studio</a></li>
+                        <li><a href="https://www.jetbrains.com/rider/" target="_blank">JetBrains Rider</a></li>
+                        <li><a href="https://github.com/features/actions" target="_blank">GitHub Actions</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-success" style="margin-top: 3rem;">
+                <h3>🚀 Ready to Start?</h3>
+                <p>Head to <a href="chapter01.html">Chapter 1: Unity Fundamentals</a> to begin your game development journey!</p>
+                <div class="demo-controls" style="margin-top: 1rem;">
+                    <button class="demo-button" onclick="window.location.href='chapter01.html'">
+                        Start Chapter 1 →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Sidebar toggle for mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrolled / height) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        });
+
+        // Active navigation highlighting
+        const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            if (link.getAttribute('href') === currentPage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
